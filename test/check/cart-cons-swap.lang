@@ -1,0 +1,8 @@
+-- A cart as a list up to a swap is refused (S3, rule R1, PLAN 4.4).
+-- A program cannot declare a family. In domain text this family is not
+-- a cell signature either: the type parameter occurs outside the
+-- generator. The cart is the cell form Bag, and bagComm is its swap.
+family Cart (A : Type 0) := cartNil
+  | cartCons (cartHead : A) (cartTail : Cart A)
+  | cartSwap (swapX : A) (swapY : A) (swapTail : Cart A) (i : I)
+    [ ~i -> cartCons A swapX (cartCons A swapY swapTail), i -> cartCons A swapY (cartCons A swapX swapTail) ]

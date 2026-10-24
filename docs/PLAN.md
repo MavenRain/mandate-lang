@@ -219,7 +219,7 @@ signer, or another `self` in its domain, and the checker refuses it
 ### 4.4 The cart is a bag
 
 The order of the lines does not change a cart. So `Cart m s` is `Bag`,
-the free commutative monoid (a QIT with a `swap` path constructor). Each
+the free commutative monoid (a QIT with a `swap` path constructor; in the cell form the swap is `bagComm`, Q-S3-2). Each
 map out of `Bag` must respect `swap`. `total` does, because `+` on `U256`
 commutes (and the checker refuses an overflow, O17). `cartHash` hashes the
 canonical form: the lines in strictly increasing order of `hash l`. The
@@ -483,7 +483,7 @@ call (S9).
 | S0 | Seed: the template with the tcc-evm-contract host, the design verbatim, this plan, the kit gate GREEN, the private remote | DONE |
 | S1 | USER rulings on the questions of section 11; record them; read arXiv 2609.11757 and check the attack mapping (O4); plan the zkpolicy condition (Q10 (b), 4.9) | DONE |
 | S2 | Kernel port (section 6); the gate counts of the source | DONE: from bridge-lang 174f975 and intent-lang ef5abe8; 387 source files: KEEP 291, ADAPT 23, DROP 73, plus 5 new files (field.c/h, secp256k1.c/h, secptool.c); src 36 to 32 files (15600 to 13733 lines), test 295 to 242 (6621 to 5017), examples 53 to 42 (3226 to 2255); gate EXIT 0: examples 52 to 41, check refusals 188 to 168, kit-only refusals 22 to 19, evals 277 to 136, lower refusals 16 to 15, precompile steps 128 to 11, runs 5, mock 13 rows, diff 15 rows; the prove, contract, ring and differential rows are cut; O32 to O56; Q-S2-1 to Q-S2-4 OPEN |
-| S3 | R1 in this repo: `REFUSE_CELL`, the former matrix as CM and CC rows, `Bag` with `swap` | PLANNED |
+| S3 | R1 in this repo: `REFUSE_CELL`, the former matrix as CM and CC rows, `Bag` with `swap` | DONE (2026-10-24): base 9a1fc6c, tree df9ac214 (O57); `REFUSE_CELL` HAVE (src/front/check.c, test/fronttool.c); formers/FORMERS.md section 5 has the CM row (`Bag`, `FreeMon`) and the CC row (`Stream`); `Bag` HAVE, `bagComm` is the swap (O59); new check row test/check/cart-cons-swap.lang REFUSE_DATA (O61); gate EXIT 0: examples 41, parse refusals 19, check refusals 169 (168 + 1), kit-only refusals 19, evals 136, run refusals 10, builds 3, lower refusals 15, checks 32; O57 to O61; Q-S3-1 and Q-S3-2 OPEN; Q-S2-1 to Q-S2-4 stay OPEN |
 | S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | PLANNED |
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | PLANNED |
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | PLANNED |
@@ -707,6 +707,28 @@ call (S9).
 - O56 (S2): test/gate.sh had two refusal loops over test/pool and
   test/bridge (0 rows after O33) that named the dropped examples
   pool.lang and bridge.lang. S2 cuts them. Builder call.
+- O57 (S3 Step 0): the USER S2 commit 9a1fc6c has the tree df9ac214, not
+  the staged tree e6ceed7e. 6 files are different: src/front/check.c
+  (INTERVAL_TYPE: I is a separate sort, rule R9), src/front/eval.c
+  (val_isubst_mode: a Glue line keeps its presentation under a face map),
+  test/pathtool.c (82 new lines), test/fronttool.c (33 new lines),
+  test/check/expect.txt (face-sort.lang gives INTERVAL_TYPE) and
+  test/gate.sh (the dash scan has no DESIGN.md exclusion). The bridge,
+  intent, orbit, virtu, resolve, restrict and agent kits have the same
+  fix. The gate gives EXIT 0 on HEAD. USER ruling 2026-10-24: accept.
+- O58 (S3): formers/FORMERS.md has F1 to F15 only. bridge-lang has F16 to
+  F19 (dependent eliminator, Glue and univalence, HIIT, QIIT) and a Fin
+  kit note, and the port has these parts of the kernel. Q-S3-1.
+- O59 (S3): PLAN 4.4 names a `swap` path constructor. In a cell
+  signature the type parameter occurs in the generator only, so a list up
+  to a swap (`swap x y xs`) is not a cell signature. The swap of the cell
+  form is `bagComm` (`bagOp x y = bagOp y x`). Q-S3-2.
+- O60 (S3): the CC row names `Stream` only. `Machine` (PLAN 4.7) is not in
+  domain/domain.lang. It comes with the checker slice.
+- O61 (S3): a program cannot declare a family (REFUSE_DATA), so
+  REFUSE_CELL occurs only for domain text. test/check/cart-cons-swap.lang
+  gives REFUSE_DATA. A test/fronttool.c row with this cart in domain text
+  would give REFUSE_CELL. S3 did not add it. Builder call.
 
 ## 11. Questions for the USER (S1)
 
@@ -797,3 +819,10 @@ New questions (S2), OPEN. S2 applied the (a) option where the text says
   text without the private ballot defs `b0`, `w0`, `c0` and `complete`.
   RECOMMENDED; applied. (b) drop dao.lang and dao3.lang with their eval
   and check rows.
+- Q-S3-1 (O58): F16 to F19 in formers/FORMERS.md. (a) port the four
+  sections, the Fin kit note and their matrix rows from bridge-lang in S4
+  Step 0 as a docs change. RECOMMENDED. (b) keep F1 to F15 and the CM and
+  CC rows only.
+- Q-S3-2 (O59): the name of the swap. (a) keep `bagComm` as the swap of
+  4.4; PLAN 4.4 names it. RECOMMENDED; applied. (b) rename `bagComm` to
+  `swap` in domain/domain.lang, the examples and the eval rows.
