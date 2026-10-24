@@ -1,0 +1,9 @@
+-- REFUSE_LOWER (slice S3, kickoff 2.3): hcomp over a neutral U256 base. The ecrecover word is open (x), so it stays stuck (R17).
+state State := makeState (count : Nat)
+def init : State := makeState 0
+
+def pathWord : (env : Env) -> (s : State) -> (x : U256) -> U256 :=
+  fun (env : Env) (s : State) (x : U256) =>
+    hcomp U256 i0
+      (fun (i : I) => [ i0 -> addrToU256 (ecrecover x 27 x x) ])
+      (addrToU256 (ecrecover x 27 x x))

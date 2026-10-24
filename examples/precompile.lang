@@ -1,0 +1,54 @@
+-- Precompile views (slice S2, kickoff 1.5): ecrecover (1), hash (SHA3), natDiv, natMod and addrToU256.
+-- test/precompile.sh deploys this contract and compares each view on the chain with a constant that a direct `evm run` to the precompile gave.
+-- A closed ecrecover computes in the host (front/secp256k1.c): `langc eval examples/precompile.lang recoverGood` prints the CallEcrecover0 address. An open ecrecover stays stuck (R17). hash, natDiv, natMod and addrToU256 compute.
+state State := makeState (sigs : List U256)
+
+def init : State := makeState nil
+
+-- Entry: push one s word for recoverSum.
+def sign : (env : Env) -> (s : State) -> (x : U256) -> Option (Prod State (List Out)) :=
+  fun (env : Env) (s : State) (x : U256) => some (pair (makeState (cons x (sigs s))) nil)
+
+-- ecrecover of a hash, v, r and s; an invalid signature gives the address 0 (R18).
+def recover : (env : Env) -> (s : State) -> (h : U256) -> (v : Nat) -> (r w : U256) -> Addr :=
+  fun (env : Env) (s : State) (h : U256) (v : Nat) (r w : U256) => ecrecover h v r w
+
+-- One ecrecover statement in a fold body runs once for each pushed s word (the end of the list first).
+-- The output block must be zero before each call (R18): a broken s after a valid s gives the address 0, not the old bytes.
+def recoverSum : (env : Env) -> (s : State) -> U256 :=
+  fun (env : Env) (s : State) =>
+    fold
+      (fun (x : U256) (acc : U256) =>
+        u256Add
+          (addrToU256
+            (ecrecover 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 27
+              0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu x))
+          acc)
+      0u (sigs s)
+
+-- signedBy: a is not 0 and ecrecover h v r w = a. An invalid signature gives the address 0 (R18), so the signer 0 must not match.
+def signedBy : (env : Env) -> (s : State) -> (h : U256) -> (v : Nat) -> (r w : U256) -> (a : Addr) -> Flag :=
+  fun (env : Env) (s : State) (h : U256) (v : Nat) (r w : U256) (a : Addr) =>
+    flagIf (addrEq a 0x0000000000000000000000000000000000000000) flagNo (addrEq (ecrecover h v r w) a)
+
+def hashv : (env : Env) -> (s : State) -> (a b : U256) -> U256 :=
+  fun (env : Env) (s : State) (a b : U256) => hash a b
+
+-- leaf i: the parent index of leaf i plus its side bit (natDiv and natMod of one Nat).
+def leaf : (i : Nat) -> Nat := fun (i : Nat) => natAdd (natDiv i 2) (natMod i 2)
+
+def leafStep : (env : Env) -> (s : State) -> (i : Nat) -> Nat :=
+  fun (env : Env) (s : State) (i : Nat) => leaf i
+
+def addrWord : (env : Env) -> (s : State) -> (a : Addr) -> U256 :=
+  fun (env : Env) (s : State) (a : Addr) => addrToU256 a
+
+-- Closed terms for `langc eval`: hash computes (keccak256 of 64 zero bytes), addrToU256 computes.
+def hashZero : U256 := hash 0u 0u
+
+def ownerWord : U256 := addrToU256 0x00000000000000000000000000000000000000aa
+
+-- A closed ecrecover computes in the host (front/secp256k1.c): the CallEcrecover0 address, and the address 0 for s = 0.
+def recoverGood : Addr := ecrecover 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 27 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 0x789d1dd423d25f0772d2748d60f7e4b81bb14d086eba8e8e8efb6dcff8a4ae02u
+
+def recoverBad : Addr := ecrecover 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 27 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 0u

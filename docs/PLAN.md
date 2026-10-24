@@ -482,7 +482,7 @@ call (S9).
 |---|---|---|
 | S0 | Seed: the template with the tcc-evm-contract host, the design verbatim, this plan, the kit gate GREEN, the private remote | DONE |
 | S1 | USER rulings on the questions of section 11; record them; read arXiv 2609.11757 and check the attack mapping (O4); plan the zkpolicy condition (Q10 (b), 4.9) | DONE |
-| S2 | Kernel port (section 6); the gate counts of the source | PLANNED |
+| S2 | Kernel port (section 6); the gate counts of the source | DONE: from bridge-lang 174f975 and intent-lang ef5abe8; 387 source files: KEEP 291, ADAPT 23, DROP 73, plus 5 new files (field.c/h, secp256k1.c/h, secptool.c); src 36 to 32 files (15600 to 13733 lines), test 295 to 242 (6621 to 5017), examples 53 to 42 (3226 to 2255); gate EXIT 0: examples 52 to 41, check refusals 188 to 168, kit-only refusals 22 to 19, evals 277 to 136, lower refusals 16 to 15, precompile steps 128 to 11, runs 5, mock 13 rows, diff 15 rows; the prove, contract, ring and differential rows are cut; O32 to O56; Q-S2-1 to Q-S2-4 OPEN |
 | S3 | R1 in this repo: `REFUSE_CELL`, the former matrix as CM and CC rows, `Bag` with `swap` | PLANNED |
 | S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | PLANNED |
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | PLANNED |
@@ -617,6 +617,96 @@ call (S9).
   its P10 is not started (its docs/STATUS.md). zkml-lang HEAD 2f53fd4 has
   10 staged files of another session (the Halo2 work of its Z9), not
   committed. Builder call.
+- O32 (S1 commit): the USER edit in 7a2dcaa. docs/PLAN.md +36 -10 against
+  the staged S1 tree 0794773c: a valid proof alone does not authorize a
+  spend; the verifier must also enforce an approving decision of the
+  pinned policy (4.9, 5, 8, the S9 row, O27). USER.
+- O33 (S2, Q8 (a)): the leave-outs. S2 drops ElGamal (elgamal.c/h,
+  elgamaltool.c), `Enc` and the encrypted tally, the pools (test/pool) and
+  the bridge domain (test/bridge): 11 examples, 20 check files and their
+  rows in all. Q8. RULED (a).
+- O34 (S2): the contract writer is dropped: writer.c/h, writertool.c,
+  test/contract/, test/prove/, `langc prove`, `langc contract` and
+  `prove_command`. Its cast is `zkVerify ring` (bLSAG), so it needs the
+  leave-outs. The mandate contract writer comes in S7. Q-S2-1.
+- O35 (S2): the kit S0 sample files examples/inventory.lang and
+  test/check/domain-name.lang are removed. The bridge domain has no kit
+  sample (sealed-lang S2 R21), so they cannot pass. S2 does not put their
+  rows back. Builder call.
+- O36 (S2): the ZK surface of orbit-lang S8 B2b is dropped: `OP_ZK_*`,
+  `RULE_ZK_*`, `ZKWitness`, `proveZK`, `verifyZK`, `Ballot_priv`,
+  `castPrivate` and the kernel/zk.lang splice. The policy proof surface
+  comes in S9 (4.9). Q-S2-2.
+- O37 (S2): the BN254 precompile ops `ecAdd`, `ecMul` and `ecPairing` are
+  dropped: core.h `OP_EC_*`, eval.c `ec_op` and `closed_point`, lower.c
+  `is_curve` and the pairing list, the base-ec and pairing check files,
+  test/lower/pairing-open.lang. `lower_curve` lowers `ecrecover` only
+  (precompile address 1). Builder call.
+- O38 (S2, Q8 (a)): bLSAG is dropped: blsag.c/h, blsagtool.c, the ring
+  contracts and examples/ring3.lang. Q8. RULED (a).
+- O39 (S2): the field split. src/front/field.c/h hold the generic `Fe`,
+  `Modulus` and `ec0` layer of intent-lang ef5abe8 bn254.c (`G1` is now
+  `EcPoint`, `BN_LIMBS` is now `FE_LIMBS`, `fe_from_u64` stays).
+  bn254.c/h are gone. secp256k1.c needs this layer only. Builder call.
+- O40 (S2, Q8 (a)): the host `ecrecover` of intent-lang ef5abe8:
+  secp256k1.c/h, test/secptool.c, the Makefile `SECP_TOOL`, and eval.c
+  `recover` (closed arguments by `secp_recover`). Q8. RULED (a).
+- O41 (S2): an error in the builder prompt S2-s3 (item 2): the ef5abe8
+  hunks check.c +18, the 2 kit.txt lines and fronttool.c +12 are
+  `ZKProof` and one-hot rows, not `ecrecover`. S2 does not port them.
+  Builder call.
+- O42 (S2): fronttool.c `law_guest` keeps its test-local sealed family
+  (`Enc`, `decrypt`). It tests the law checker, not the `Enc` surface.
+  Builder call.
+- O43 (S2): lowertool.c loses its 2 precompile-failure rows (`ecAdd`).
+  Precompile 1 does not make the STATICCALL fail, so no surface op gets
+  to the revert path of lower.c. Q-S2-3.
+- O44 (S2): the ef5abe8 `ecrecover` tests are ported: `signedBy`,
+  `recoverGood` and `recoverBad` in examples/precompile.lang and 2 expect
+  rows. precompile.lang goes from 83 to 54 lines (the BN254 views are
+  cut). Builder call.
+- O45 (S2): the header comments of examples/precompile.lang and
+  test/precompile.sh no longer name the BN254 ops. Builder call.
+- O46 (S2): test/gate.sh goes from 314 to 135 lines: the prove, contract,
+  ring and guest differential blocks are cut. test/precompile.sh goes
+  from 214 to 75 lines: the curve, `zkcast`, contract and EVM
+  differential blocks are cut. The differential of section 8 comes in S7.
+  Builder call.
+- O47 (S2): test/run.sh goes from 117 to 71 lines: the host differential
+  (14 host runs at the source) is cut. Builder call.
+- O48 (S2): test/abi.expect loses the usage lines of `langc prove` and
+  `langc contract` (main.c lost both commands, O34). Builder call.
+- O49 (S2, trap): a stale build/domain.c (its mtime newer than
+  domain/domain.lang, with a domain that has `lineTotal` and `natMul`)
+  made each `langc` call fail with `NAME_UNKNOWN`. `rm build/domain.c`
+  and a build fixed it. The cause is not known. A build with EXIT 0 does
+  not show it, so run one `langc` call after each build. Builder call.
+- O50 (S2): examples/ring3.lang (a private bLSAG ballot ring) was not in
+  the borderline list of the builder prompt S2-s3. S2 drops it (O38).
+  Builder call.
+- O51 (S2): the `REFUSE_SIG` rows of the ZK names `ZKWitness` and
+  `proveZK` went with the surface (O36), so the check files
+  sig-primitive, sig-primitive-op and zk-redefine have no refusal to
+  show. Builder call.
+- O52 (S2): S2 drops 5 check files (sig-primitive, sig-primitive-op,
+  zk-redefine, zk-flip with `Ballot_priv`, attest-wrong with a Schnorr
+  check on `ecMul`) and examples/ring3.lang, with their rows: the eval
+  rows `dao w0`, `dao c0`, `ring3 w` and `ring3 c`. Builder call.
+- O53 (S2): examples/dao.lang keeps the DAO prelude (`Config`,
+  `Constitution`, `Aggregation`, `Tally`, `gov`, `amend`, `Orbit`) as
+  kernel text, without the private ballot (`b0`, `w0`, `c0`,
+  `complete`). Q-S2-4.
+- O54 (S2): the open word of test/lower/path-word.lang is now
+  `addrToU256 (ecrecover x 27 x x)` in place of an `ecAdd` word. The row
+  is still `REFUSE_LOWER` (K4c does not lower `hcomp` at a word
+  position). Builder call.
+- O55 (S2): the gate time. `make -j 2 check` takes 89 s (S2 s7) and
+  170 s (S2 s8, other work on the machine), against 450 s at the source.
+  The build checks go from 33 to 32; S2 did not find which check went.
+  Builder call.
+- O56 (S2): test/gate.sh had two refusal loops over test/pool and
+  test/bridge (0 rows after O33) that named the dropped examples
+  pool.lang and bridge.lang. S2 cuts them. Builder call.
 
 ## 11. Questions for the USER (S1)
 
@@ -689,3 +779,21 @@ Q1 to Q10 are RULED 2026-10-24 (section 1). New questions (S1), RULED
   lowest price of a listing for the same need, from the viewer), and
   `Gate` also needs `Confirmed` when a line has `price l > floor l`.
   RULED (a).
+
+New questions (S2), OPEN. S2 applied the (a) option where the text says
+"applied". A ruling (b) undoes that part in S3.
+
+- Q-S2-1 (O34): the contract writer of bridge-lang. (a) drop it now; the
+  mandate contract writer comes in S7. RECOMMENDED; applied. (b) keep the
+  writer and change its cast (the cast needs bLSAG, a Q8 (a) leave-out).
+- Q-S2-2 (O36): the ZK surface of orbit-lang S8 B2b. (a) drop it now with
+  bLSAG; the policy proof surface comes in S9 (4.9). RECOMMENDED;
+  applied. (b) keep it for S9.
+- Q-S2-3 (O43): the failed-STATICCALL revert path of lower.c has no test
+  now. (a) keep it without a test in S2; the S9 STATICCALL policy
+  verifier op (4.9, O12) adds a failing precompile row. RECOMMENDED. (b)
+  add a test-only failing precompile now.
+- Q-S2-4 (O53): examples/dao.lang. (a) keep the DAO prelude as kernel
+  text without the private ballot defs `b0`, `w0`, `c0` and `complete`.
+  RECOMMENDED; applied. (b) drop dao.lang and dao3.lang with their eval
+  and check rows.
