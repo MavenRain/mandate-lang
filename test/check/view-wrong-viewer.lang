@@ -1,0 +1,100 @@
+-- A View with another viewer (S5 s1): the guest form of NO_VIEW. demoSig is the signature of demoSigner, not of 0x..bb, so signedAs gives flagNo (PATH_END in Flag).
+-- Hash, Sig and signer (S4, PLAN section 3). A Sig is (v, r, s); v is a Nat, the v of ecrecover (O63).
+def Hash : Type 0 := U256
+
+def Sig : Type 0 := Prod Nat (Prod U256 U256)
+
+def sig : (v : Nat) -> (r w : U256) -> Sig := fun (v : Nat) (r w : U256) => pair v (pair r w)
+
+-- signer d g x: the address that signed the EIP-712 digest of the domain separator d and the struct hash g.
+-- An invalid signature gives the address 0 (R18): the address 0 is no signer.
+def signer : (d g : Hash) -> (x : Sig) -> Addr :=
+  fun (d g : Hash) (x : Sig) => ecrecover (hash712 d g) (first x) (first (second x)) (second (second x))
+
+-- signedAs d g x a: a is not 0 and signer d g x = a (the zero guard of signedBy).
+def signedAs : (d g : Hash) -> (x : Sig) -> (a : Addr) -> Flag :=
+  fun (d g : Hash) (x : Sig) (a : Addr) =>
+    flagIf (addrEq a 0x0000000000000000000000000000000000000000) flagNo (addrEq (signer d g x) a)
+
+-- Listing (S5, PLAN section 3, O72): the merchant, the sku, the price and the largest quantity, a right-nested Prod with accessors.
+def Listing : Type 0 := Prod Addr (Prod U256 (Prod U256 U256))
+
+def listing : (m : Addr) -> (k p q : U256) -> Listing :=
+  fun (m : Addr) (k p q : U256) => pair m (pair k (pair p q))
+
+def merchant : (l : Listing) -> Addr := fun (l : Listing) => first l
+
+def sku : (l : Listing) -> U256 := fun (l : Listing) => first (second l)
+
+def price : (l : Listing) -> U256 := fun (l : Listing) => first (second (second l))
+
+def maxQty : (l : Listing) -> U256 := fun (l : Listing) => second (second (second l))
+
+-- listingHash l (Q-S5-4 (a)): hash4 of the merchant word, the sku, the price and the largest quantity.
+def listingHash : (l : Listing) -> Hash :=
+  fun (l : Listing) => hash4 (addrToU256 (merchant l)) (sku l) (price l) (maxQty l)
+
+-- side b h s (O69, O79): hash h s for the side bit 0 and hash s h for the side bit 1. flagIf selects the word, thus side lowers at a word position (Q-S5-5 (b)).
+def side : (b : Nat) -> (h s : Hash) -> Hash :=
+  fun (b : Nat) (h s : Hash) => flagIf (natEq b 0) (hash h s) (hash s h)
+
+-- mstep s p: one Merkle step of the pair (index, hash) with the sibling s.
+def mstep : (s : Hash) -> (p : Prod Nat Hash) -> Prod Nat Hash :=
+  fun (s : Hash) (p : Prod Nat Hash) => pair (natDiv (first p) 2) (side (natMod (first p) 2) (second p) s)
+
+-- merkle i h sib (Q-S5-1 (a), O70): the Merkle root of the leaf h at the index i. The List fold does the end of the list first, so sib lists the siblings from the root down.
+def merkle : (i : Nat) -> (h : Hash) -> (sib : List Hash) -> Hash :=
+  fun (i : Nat) (h : Hash) (sib : List Hash) => second (fold mstep (pair i h) sib)
+
+-- merkle2 i h s1 s0 (Q-S5-3 (a)): the Merkle root of depth 2 (two mstep calls). s1 is the sibling below the root and s0 is the sibling of the leaf.
+def merkle2 : (i : Nat) -> (h s1 s0 : Hash) -> Hash :=
+  fun (i : Nat) (h s1 s0 : Hash) => second (mstep s1 (mstep s0 (pair i h)))
+
+-- ProvAt r l (Q-S5-1 (a)): the index of l, the siblings from the root down and a path from the root that they give to r. A wrong sibling has no path (NO_PATH; PATH_END in the guest).
+def ProvAt : (r : Hash) -> (l : Listing) -> Type 0 :=
+  fun (r : Hash) (l : Listing) => (i : Nat) * (sib : List Hash) * Path Hash (merkle i (listingHash l) sib) r
+
+-- Signed d a g (Q-S5-2 (a)): a signature x and a path from signedAs d g x a to flagYes.
+def Signed : (d : Hash) -> (a : Addr) -> (g : Hash) -> Type 0 :=
+  fun (d : Hash) (a : Addr) (g : Hash) => (x : Sig) * Path Flag (signedAs d g x a) flagYes
+
+-- The EIP-712 type hashes (S5): keccak256 of `View(bytes32 root,uint256 id)` and of `EIP712Domain(uint256 chainId,address verifyingContract)`.
+def viewType : Hash := 0x222ffd999f91ddddd8de1984b4ebbfda91177924d318fed0894cf2fe60c6c111u
+
+def domainType : Hash := 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218u
+
+-- ViewAt d a n (Q-S5-2 (a), O75): a Merkle root of listings and the signature of the viewer a on (root, n). The View d m of PLAN section 3 is ViewAt d (viewer m) (id m) when Mandate is in (S5 s2).
+def ViewAt : (d : Hash) -> (a : Addr) -> (n : U256) -> Type 0 :=
+  fun (d : Hash) (a : Addr) (n : U256) => (r : Hash) * Signed d a (hash3 viewType r n)
+
+def root : (d : Hash) -> (a : Addr) -> (n : U256) -> (v : ViewAt d a n) -> Hash :=
+  fun (d : Hash) (a : Addr) (n : U256) (v : ViewAt d a n) => witness v
+
+-- Prov d a n v l (O75): ProvAt into the root of the view v.
+def Prov : (d : Hash) -> (a : Addr) -> (n : U256) -> (v : ViewAt d a n) -> (l : Listing) -> Type 0 :=
+  fun (d : Hash) (a : Addr) (n : U256) (v : ViewAt d a n) (l : Listing) => ProvAt (root d a n v) l
+
+-- Closed terms (S5 s1): two listings of the merchant 0x..aa. The leaf demoL0 is at the index 0, with the siblings 7u and listingHash demoL1 from the root down.
+def demoL0 : Listing := listing 0x00000000000000000000000000000000000000aa 1u 100u 5u
+
+def demoL1 : Listing := listing 0x00000000000000000000000000000000000000aa 2u 250u 1u
+
+def demoListingHash : Hash := listingHash demoL0
+
+def demoSib : List Hash := cons 7u (cons (listingHash demoL1) nil)
+
+def demoRoot : Hash := merkle 0 (listingHash demoL0) demoSib
+
+def demoRoot2 : Hash := merkle2 0 (listingHash demoL0) 7u (listingHash demoL1)
+
+-- The domain of the defaults of `evm run` (the chain id 1337 and the contract address 0x..7265636569766572), as in the guest run of the checker.
+def demoDomain : Hash := hash3 domainType 1337u (addrToU256 0x0000000000000000000000007265636569766572)
+
+def demoId : U256 := 1u
+
+-- demoSig: the r and s of the Mail example on another digest. ecrecover gives a signer that is not 0, and no private key is necessary.
+def demoSig : Sig := sig 28 0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9du 0x07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b91562u
+
+def demoSigner : Addr := signer demoDomain (hash3 viewType demoRoot demoId) demoSig
+
+def bad : ViewAt demoDomain 0x00000000000000000000000000000000000000bb demoId := pack demoRoot (pack demoSig refl)

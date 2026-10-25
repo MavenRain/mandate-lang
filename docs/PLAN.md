@@ -89,6 +89,17 @@ questions):
 - Tests are guest-language files plus `langc run` scripts. The kit gate
   scripts stay. We add no new harness.
 
+- 2026-10-24 (S5 s1 kickoff, claude7): the USER RULED (a) on Q-S5-1 to
+  Q-S5-4 (section 11).
+- 2026-10-24 (S5 s1, claude7): the USER RULED (b) on Q-S5-5 (section
+  11): a word select op in S5 s1b.
+- 2026-10-25 (S5 s1b, claude7): `flagIf` is the word select (O79), so
+  `side` lowers and the chain runs `merkle2V` (O80). Gate EXIT 0.
+- 2026-10-25 (S5 s2, claude7): the USER RULED (a) on Q-S5-6 (O83) and
+  Q-S5-7 (O82).
+- 2026-10-25 (S5 close, claude7): S5 DONE. Gate EXIT 0 with the counts
+  of the S5 row (section 9).
+
 ## 2. The reading of R1
 
 R1 has the same text as in intent-lang and bridge-lang. This plan proposes
@@ -152,11 +163,11 @@ and calldata bytes in and one word out, for the policy verifier.
 | signer | defined | `ecrecover` of an EIP-712 digest; the zero address is no signer |
 | Mandate | defined | a record: `owner`, `agent`, `viewer`, `vault`, `token`, `cap`, `autoLimit`, `expiry`, `id`, `policyVerifier`, `policyId` (4.1, 4.9) |
 | Listing | defined | `(merchant : Addr) * (sku : U256) * (price : U256) * (maxQty : U256)` |
-| View m | defined | `(root : Hash) * Signed (viewer m) (root, id m)`: the Merkle root of the listings that the user saw or approved (4.2) |
+| View m | defined | `(root : Hash) * Signed (viewer m) (root, id m)`: the Merkle root of the listings that the user saw or approved (4.2); in the guest `View d m`, where `d` is the EIP-712 domain word from `Env` (Q-S5-2 (a)) |
 | Session m | defined | `(sid : U256) * (merchant : Addr) * View m` |
-| Prov v l | defined | `(i : U256) * (sib : List Hash) * Path Hash (merkle i (hash l) sib) (root v)` (4.2) |
+| Prov v l | defined | `(i : Nat) * (sib : List Hash) * Path Hash (merkle i (listingHash l) sib) (root v)`; `sib` lists the siblings from the root down (4.2; Q-S5-1 (a), Q-S5-4 (a), O70) |
 | Line m s | defined | `(l : Listing) * (q : U256) * Prov (view s) l * Path Addr (merchant l) (merchant s) * Le q (maxQty l)` |
-| Cart m s | defined | `Bag (Line m s)` (4.4) |
+| Cart m s | defined | `Bag (Line m s)` (4.4); in the guest the list of lines in the canonical order (Q-S5-6 (a), O83) |
 | Cred s | defined | `Signed (vault m) (sid s, merchant s, root (view s))` (4.3) |
 | Confirmed s c | defined | `Signed (viewer m) (sid s, cartHash c, claimHash)` (4.5) |
 | PolicyProof m s c | primitive | a zkpolicy-lang proof of an approving decision for this spend; its only operation is the verifier call (4.9) |
@@ -502,7 +513,7 @@ call (S9).
 | S2 | Kernel port (section 6); the gate counts of the source | DONE: from bridge-lang 174f975 and intent-lang ef5abe8; 387 source files: KEEP 291, ADAPT 23, DROP 73, plus 5 new files (field.c/h, secp256k1.c/h, secptool.c); src 36 to 32 files (15600 to 13733 lines), test 295 to 242 (6621 to 5017), examples 53 to 42 (3226 to 2255); gate EXIT 0: examples 52 to 41, check refusals 188 to 168, kit-only refusals 22 to 19, evals 277 to 136, lower refusals 16 to 15, precompile steps 128 to 11, runs 5, mock 13 rows, diff 15 rows; the prove, contract, ring and differential rows are cut; O32 to O56; Q-S2-1 to Q-S2-4 OPEN |
 | S3 | R1 in this repo: `REFUSE_CELL`, the former matrix as CM and CC rows, `Bag` with `swap` | DONE (2026-10-24): base 9a1fc6c, tree df9ac214 (O57); `REFUSE_CELL` HAVE (src/front/check.c, test/fronttool.c); formers/FORMERS.md section 5 has the CM row (`Bag`, `FreeMon`) and the CC row (`Stream`); `Bag` HAVE, `bagComm` is the swap (O59); new check row test/check/cart-cons-swap.lang REFUSE_DATA (O61); gate EXIT 0: examples 41, parse refusals 19, check refusals 169 (168 + 1), kit-only refusals 19, evals 136, run refusals 10, builds 3, lower refusals 15, checks 32; O57 to O61; Q-S3-1 and Q-S3-2 OPEN; Q-S2-1 to Q-S2-4 stay OPEN |
 | S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | DONE (2026-10-24): base 68efac0. `Env` `chainid` and `self` (CHAINID, ADDRESS); `hash712`, `hash3` and `hash4` (Q-S4-1 (a), O67); `Hash`, `Sig`, `signer` and `signedAs` (examples/precompile.lang); `mailHash` gives the struct hash of the EIP-712 Mail example by `hash3` and `hash4`; formers/FORMERS.md F16 to F19 and the Fin kit note (Q-S3-1 (a); the bridge-lang section 5 has no F16 to F19 rows); gate EXIT 0: evals 144, precompile 19 steps; O61 stays OPEN; O62 to O67 |
-| S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | PLANNED |
+| S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | DONE 2026-10-25 (s1 kickoff 2026-10-24; s1 DONE 2026-10-24 without `merkle2V`, gate counts examples 41, check refusals 171, evals 148, precompile 21 steps, the other S4 counts the same; Q-S5-5 RULED (b); s1b DONE 2026-10-25: `flagIf` is the word select (O79), `side` lowers, 3 `merkle2V` rows (O80), gate counts precompile 24 steps, the other s1 counts the same; s2 DONE 2026-10-25: `Mandate`, `View`, `Session`, `Line`, `Cart`, `cartHash` and 4 guest refusals (PATH_END), Q-S5-6 RULED (a) (the sorted `List`), Q-S5-7 RULED (a) (`def Le`), gate counts check refusals 175, evals 154, the other s1b counts the same, O81 to O84): base 65527a8; three sessions: s1 `Listing`, `listingHash`, `merkle`, `Prov`, `Signed`, `View`; s2 `Line`, `Cart`, `cartHash`, `Mandate`; the close; Q-S5-1 to Q-S5-4 RULED (a); O68 to O84; close DONE 2026-10-25: gate EXIT 0 (mandate-lang-work/S5-close-gate.log), the s2 counts: examples 41, parse refusals 19, check refusals 175, kit-only refusals 19, evals 154, runs 6, run refusals 10, asmtool 8 of 8, builds 3, lower refusals 15, checks 32, dispatch 20, evm steps 43, precompile 24 steps, mock 13 rows, diff 15 rows, emit 24 |
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | PLANNED |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | PLANNED |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | PLANNED |
@@ -769,6 +780,92 @@ call (S9).
   IR_OP_PAIR operands. A PAIR leaves 2 words on the stack and is not a
   value. KECCAK3 and KECCAK4 write 1 and 2 words past the 2-word scratch;
   they save these words and store them again after the SHA3 (as O65).
+- O68 (S5): the kit has no U256 div, mod or shift. The word ops are
+  `u256Add`, `u256Sub`, `u256Eq` and `u256Le`. `natDiv` and `natMod` are
+  on `Nat`. Q-S5-1 RULED (a): the `Prov` index is `i : Nat`.
+- O69 (S5): `elim` on `Nat` is refused (TYPE_MISMATCH: the motive must be
+  on `Sum A B`, `Unit` or a domain family). The side bit of a Merkle step
+  uses the `Nat` fold: `fold (fun (x : Hash) => hash s h) (hash h s) b`
+  gives `hash h s` when `b` is 0 and `hash s h` when `b` is 1.
+- O70 (S5): the `List` fold does the end of the list first: `fold f z
+  (cons a (cons b nil))` is `f a (f b z)`. So `sib` of `Prov` lists the
+  siblings from the root down, and the sibling of the leaf is the last
+  element. The probe: mandate-lang-work/S5-merkle-probe.lang.
+- O71 (S5): the checker decides `Path Hash` by computation. `refl` checks
+  when the two words are equal. A wrong sibling gives PATH_END ("the path
+  at i1 is X, but the type needs Y"). So the guest refusal of a `Prov` for
+  a listing that the user did not see is PATH_END.
+- O72 (S5): section 3 calls `Mandate` a record, but a program cannot
+  declare a family (REFUSE_DATA). So `Mandate` is a right-nested `Prod` of
+  the 11 fields, with accessor defs (`owner`, `agent` and the others) by
+  `first` and `second` (s2).
+- O73 (S5): a map out of `Bag` must respect `bagComm` (4.4). `cartHash`
+  hashes the lines in strictly increasing order of `listingHash l`. The
+  guest form of this map is open for s2 (a Q-S5-n if the PLAN does not fix
+  it).
+- O74 (S5 s1): the S5 defs are in examples/precompile.lang, the
+  contract of test/precompile.sh, next to `Hash`, `Sig`, `signer` and
+  `signedAs`. There is no examples/mandate.lang in s1.
+- O75 (S5 s1): `Mandate` comes in s2, so s1 has `ViewAt d a n` with the
+  viewer `a` and the mandate id `n` as words. In s2, `View d m` is `ViewAt
+  d (viewer m) (id m)`. The kit has no implicit arguments, so `root` and
+  `Prov` also take `d a n`: `Prov d a n v l = ProvAt (root d a n v) l`.
+- O76 (S5 s1): test/check has no prelude (test/gate.sh `refusals
+  test/check check`). So prov-wrong-sibling.lang and view-wrong-viewer.lang
+  repeat the S4 and S5 defs (lines 88 to 103 of examples/precompile.lang
+  and the S5 block).
+- O77 (S5 s1): `merkle2V` gives REFUSE_LOWER (K4c does not lower the Nat
+  fold of `side` at a word position). The kit has no word select and no
+  word multiply. Q-S5-5 RULED (b): a word select op in s1b.
+- O78 (S5 s1): the precompile gate runs with the chain id 1 (`chainWord`),
+  and the guest run of the checker uses 1337 (src/front/check.c). So
+  `demoDomain` uses 1337 and the `domainWord` row uses 1.
+- O79 (S5 s1b): the kit has a word select. `flagIf` takes any result
+  type (rule_flag_if, src/front/check.c), and lower_if_value
+  (src/lower.c) lowers it at a word position as an IF that sets one
+  local in each branch (the arms are lazy). So s1b adds no op: `side b h
+  s = flagIf (natEq b 0) (hash h s) (hash s h)` replaces the Nat fold of
+  O69. O77 is wrong on the select; the kit has no word multiply. The
+  eval rows demoListingHash, demoRoot, demoRoot2 and demoSigner do not
+  change. The two test/check files of O76 have the new `side`.
+- O80 (S5 s1b): `merkle2V` is back in examples/precompile.lang and has
+  3 rows in test/precompile.sh (21 to 24 steps): the index 1, the index
+  2 and the demo leaves (WANT = demoRootHex). The WANT words are from
+  direct evm keccak runs (mandate-lang-work/S5-s1-vectors.txt). Gate log
+  mandate-lang-work/S5-s1b-gate.log EXIT 0. O66: s1b adds no guest op.
+- O81 (S5 s2): `Listing` has the accessor `merchant`, so the `Session`
+  accessors are `sid`, `smerchant` and `sview` (section 3 says `merchant`
+  and `view`). The kit has no implicit arguments, so `View d m`, `Session
+  d m`, `Line d m s` and `Cart d m s` take the domain word `d` (as O75).
+  The second part of a Sigma is `payload` (`lineQty`).
+- O82 (S5 s2): the kit has no `Le` or `Lt` former and no `u256Lt`.
+  Q-S5-7 RULED (a): `def Le a b` is `Path Flag (u256Le a b) flagYes` in
+  examples/precompile.lang. A q over `maxQty` has no path (PATH_END,
+  test/check/line-over-max.lang). A strict less is `flagIf (u256Eq k p)
+  flagNo (u256Le k p)` (`canonStep`). `Spend` (4.1) also needs `Lt now
+  (expiry m)`; a later slice can add `def Lt` in the same form.
+- O83 (S5 s2): Q-S5-6 RULED (a). The guest `Cart d m s` is a `List` of
+  lines and a path from `canonical` to `flagYes`: the listing hashes
+  strictly increase. The `Bag` of 4.4 is the quotient, and this list is
+  its one form. The guest text has no map out of `Bag`: the fold over the
+  `Bag` block needs a case for `bagAssoc`, `bagComm`, `bagUnitL` and
+  `bagSquash`, and the checker decides a `Path` by computation only, so a
+  commutative step on open words has no path. The wrong order and one
+  listing on two lines give PATH_END (test/check/cart-not-canonical.lang,
+  test/check/cart-same-listing.lang), NOT_CANONICAL on the chain. A wrong
+  merchant gives PATH_END (test/check/line-wrong-merchant.lang),
+  WRONG_MERCHANT on the chain.
+- O84 (S5 s2): `lineHash x` is `hash (listingHash l) q`, and `cartHash c`
+  is the `List` fold of `hash` over the line hashes from `0u`. The fold
+  does the end first (O70), so the cart of the lines x1 and x0 gives
+  `hash (lineHash x1) (hash (lineHash x0) 0u)`. The decoder of the
+  contract slice must use the same byte form. `cartHash` takes a `Cart`
+  (lines with proofs), not words, so test/precompile.sh has no `cartHash`
+  row (24 steps). The evals `demoLineHash` and `demoCartHash` are equal to
+  direct evm keccak runs (mandate-lang-work/S5-s2-vectors.txt). Gate log
+  mandate-lang-work/S5-s2-gate.log EXIT 0. O66: s2 adds no kit op; the
+  new guest defs use `pack`, `witness`, `payload`, `fold`, `flagIf`,
+  `u256Le`, `u256Eq`, `natAdd`, `natEq` and `hash`.
 
 ## 11. Questions for the USER (S1)
 
@@ -874,3 +971,29 @@ New questions (S4), RULED (a) 2026-10-24 (section 1):
   `hash4` with the plumbing of `hash` and the save and restore of
   KECCAK712 for the words past the scratch. RECOMMENDED; RULED. (b) one
   `hashWords : List U256 -> U256` that lowers only a literal list.
+
+New questions (S5), RULED (a) 2026-10-24 (section 1):
+
+- Q-S5-1 (O68): the type of the `Prov` index. (a) `i : Nat`; `natDiv` and
+  `natMod` work end to end, and a `Nat` is one word on the chain.
+  RECOMMENDED; RULED. (b) new `u256` div and mod ops, to keep `i : U256`.
+- Q-S5-2: the EIP-712 domain of `Signed` in `View m`. (a) `Signed d a g =
+  (x : Sig) * Path Flag (signedAs d g x a) flagYes` and `View d m = (root
+  : Hash) * Signed d (viewer m) (hash3 viewType root (id m))`, where `d`
+  is `hash3` of the domain type hash, `chainid` and `self` from `Env`.
+  RECOMMENDED; RULED. (b) a 12th `Mandate` field `domain m`.
+- Q-S5-3: the EVM rows of `merkle`. (a) fixed-depth views (`merkle2 i leaf
+  s1 s0` by 2 `mstep` calls) in test/precompile.sh with WANT from a direct
+  evm run, and an eval row that shows that `merkle` on a 2-element list
+  gives the same word; the `List` form comes on the chain in S7 by the
+  decoder (O15). RECOMMENDED; RULED. (b) a `List` calldata argument in the
+  kit in S5.
+- Q-S5-4: the leaf hash. (a) `listingHash l = hash4 (addrToU256 (merchant
+  l)) (sku l) (price l) (maxQty l)`; the viewer signs only the root, so a
+  leaf is not a signed struct. RECOMMENDED; RULED. (b) an EIP-712 struct
+  hash of a `Listing` type hash and the 4 words.
+- Q-S5-5 (O77): the EVM rows of `merkle`. (a) one view for each side bit
+  (`hashL`, `hashR`), no kit change. (b) a word select op (for example
+  `u256If : Flag -> U256 -> U256 -> U256`), so that `side` lowers and the
+  chain runs `merkle2`. RECOMMENDED; RULED (s1b: `flagIf` is the select, O79). (c) K4c lowers a Nat fold at a
+  word position as a loop. (d) no Merkle EVM rows in S5.

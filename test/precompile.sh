@@ -81,6 +81,15 @@ else
   call "out 4" leafStep 7
   call "out 3" leafStep 6
   call "out aa" addrWord 0x00000000000000000000000000000000000000aa
+  # domainWord: hash3 of the EIP712Domain typeHash, the chain id 1 and the contract address (S5 s1, Q-S5-2 (a)).
+  call "out e87553ada92cb0a1fb851c7da488a3970644ad264d9ec721b4c4d0564f8ae2b" domainWord
+  # listingHashV: hash4 of the merchant word, the sku, the price and the largest quantity (S5 s1, Q-S5-4 (a)).
+  call "out 54fbaf8e6b9b31384796ddd9d0418e8e89f2ba838470db2474c139f0771a9ca9" listingHashV 0x00000000000000000000000000000000000000aa 1u 100u 5u
+  # merkle2V: the Merkle root of depth 2 (S5 s1b, Q-S5-5 (b), O79). WANT is keccak256 by direct evm runs:
+  # the index 1 gives keccak(keccak(2, 1), 3), the index 2 gives keccak(3, keccak(1, 2)), and the index 0 over demoL0, 7 and demoL1 gives demoRoot.
+  call "out 3093105c651cad0e563322634a941388adb5da29ba262eddd8b99c4567960bec" merkle2V 1 1u 3u 2u
+  call "out 9b0225f2c6f59eeaf8302811ea290e95258763189b82dc033158e99a6ef45a87" merkle2V 2 1u 3u 2u
+  call "out 13cb0cf25603c21f60aa611efe8bd04bbd3b5bff5c45b4f389a7d34d18bf78b7" merkle2V 0 38438969539509123777507335721013279929321164130438759509698342409931075525801u 7u 37752521327644976104017471667882098167668241428459350234168561135720132625645u
 fi
 
 rm -rf "$tmp"

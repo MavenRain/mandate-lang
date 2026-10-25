@@ -89,3 +89,9 @@ glue-binder.lang
 elim-path-case.lang
 attest-wrong.lang
 cofamily-state.lang
+prov-wrong-sibling.lang
+view-wrong-viewer.lang
+line-wrong-merchant.lang
+line-over-max.lang
+cart-not-canonical.lang
+cart-same-listing.lang
