@@ -400,6 +400,7 @@ static const struct {
     {OP_NAT_LE, IR_OP_LE},     {OP_U256_ADD, IR_OP_ADD_TRAP}, {OP_U256_SUB, IR_OP_SUB},
     {OP_U256_LE, IR_OP_LE},    {OP_U256_EQ, IR_OP_EQ},        {OP_ADDR_EQ, IR_OP_EQ},
     {OP_HASH, IR_OP_KECCAK},   {OP_NAT_DIV, IR_OP_DIV},       {OP_NAT_MOD, IR_OP_MOD},
+    {OP_HASH712, IR_OP_KECCAK712},
 };
 
 static int form_at(Low *l, uint32_t field) {
@@ -579,6 +580,17 @@ static const IrExpr *lower_curve(Low *l, Stmts *b, const Value *v) {
   return push(l, b, s) && memo_add(l, v, s, s->local) ? ir_local(l, s->local) : NULL;
 }
 
+/* hash3 a b c and hash4 a b c d (S4, Q-S4-1): the IR ops are binary, so the
+   last 2 words of hash3, and each half of hash4, are an IR_OP_PAIR operand.
+   The arguments lower in order. */
+static const IrExpr *lower_hash(Low *l, Stmts *b, const Value *v) {
+  const IrExpr *w[4] = {NULL, NULL, NULL, NULL};
+  for (uint32_t i = 0; i < v->argc && i < 4u; i++) w[i] = lower_expr(l, b, v->args[i]);
+  return v->argc == 3u ? ir_binary(l, IR_OP_KECCAK3, w[0], ir_binary(l, IR_OP_PAIR, w[1], w[2]))
+                       : ir_binary(l, IR_OP_KECCAK4, ir_binary(l, IR_OP_PAIR, w[0], w[1]),
+                                   ir_binary(l, IR_OP_PAIR, w[2], w[3]));
+}
+
 static const IrExpr *lower_expr(Low *l, Stmts *b, const Value *v) {
   uint32_t f;
   if (v != NULL && v->kind == VAL_TRAP) return push(l, b, new_stmt(l, IR_STMT_TRAP)) ? ir_const(l, 0) : NULL;
@@ -594,14 +606,19 @@ static const IrExpr *lower_expr(Low *l, Stmts *b, const Value *v) {
   if (v != NULL && v->kind == VAL_VAR && v->nat >= 2u) return ir_local(l, (uint32_t)v->nat - 2u);
   if (field_of(v, 1u, &f) && form_at(l, f) == FORM_WORD) return ir_sload(l, ir_const(l, f));
   if (field_of(v, 0u, &f) && l->env != NULL && f < l->env->field_count) {
+    static const char *const names[] = {"now", "caller", "chainid", "self"}; /* the IrEnv order */
     const char *name = l->env->fields[f].name;
-    IrExpr *e = strcmp(name, "now") == 0 || strcmp(name, "caller") == 0 ? new_expr(l, IR_EXPR_ENV) : NULL;
-    if (e != NULL) e->field = strcmp(name, "now") == 0 ? IR_ENV_NOW : IR_ENV_CALLER;
-    return e != NULL ? e : (refuse(l, v, "(an Env field that is not now or caller)"), NULL);
+    uint32_t k = 0;
+    while (k < 4u && strcmp(name, names[k]) != 0)
+      k++;
+    IrExpr *e = k < 4u ? new_expr(l, IR_EXPR_ENV) : NULL;
+    if (e != NULL) e->field = k;
+    return e != NULL ? e : (refuse(l, v, "(an Env field that is not now, caller, chainid or self)"), NULL);
   }
   if (is_op(v, OP_TO_U256) && v->argc == 1) return lower_expr(l, b, v->args[0]);
   if (is_op(v, OP_ADDR_TO_U256) && v->argc == 1) return lower_expr(l, b, v->args[0]);
   if (is_op(v, OP_ECRECOVER) && v->argc >= 1) return ir_load(l, lower_curve(l, b, v), 0);
+  if ((is_op(v, OP_HASH3) && v->argc == 3) || (is_op(v, OP_HASH4) && v->argc == 4)) return lower_hash(l, b, v);
   if (is_op(v, OP_KMAP_GET) && v->argc == 3 && field_of(v->args[1], 1u, &f) && form_at(l, f) == FORM_MAP) {
     const IrExpr *key = lower_expr(l, b, v->args[2]);
     return ir_sload(l, ir_binary(l, IR_OP_KECCAK, key, key != NULL ? ir_const(l, f) : NULL));

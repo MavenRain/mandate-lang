@@ -197,6 +197,9 @@ static const Builtin BUILTINS[] = {
   {"natDiv", 2, RULE_NAT2, OP_NAT_DIV, OP_NAT, 0, VIS_INTERNAL},
   {"natMod", 2, RULE_NAT2, OP_NAT_MOD, OP_NAT, 0, VIS_INTERNAL},
   {"hash", 2, RULE_U256_2, OP_HASH, OP_U256, 0, VIS_INTERNAL},
+  {"hash712", 2, RULE_U256_2, OP_HASH712, OP_U256, 0, VIS_INTERNAL},
+  {"hash3", 3, RULE_FIXED, OP_HASH3, OP_U256, 0, VIS_INTERNAL},
+  {"hash4", 4, RULE_FIXED, OP_HASH4, OP_U256, 0, VIS_INTERNAL},
   {"ecrecover", 4, RULE_FIXED, OP_ECRECOVER, OP_ADDR, 0, VIS_INTERNAL},
   {"addrToU256", 1, RULE_ADDR2, OP_ADDR_TO_U256, OP_U256, 0, VIS_INTERNAL},
 };
@@ -2166,8 +2169,8 @@ static const Core *rule_prim(Call *k, Op arg) {
   return k->b->arity < 2u ? op3(c, k->b->op, 0, 1, x, NULL, NULL) : op3(c, k->b->op, 0, 2, x, y, NULL);
 }
 
-/* The curve op ecrecover (S2, R17): a fixed signature over U256 and Nat.
-   The result is the row result. */
+/* The curve op ecrecover (S2, R17), hash3 and hash4 (S4, Q-S4-1): a fixed
+   signature over U256 and Nat. The result is the row result. */
 static const Core *rule_fixed(Call *k) {
   enum { SHAPE_U256, SHAPE_NAT };
   static const struct {
@@ -2175,6 +2178,8 @@ static const Core *rule_fixed(Call *k) {
     unsigned char arg[4];
   } ROWS[] = {
     {OP_ECRECOVER, {SHAPE_U256, SHAPE_NAT, SHAPE_U256, SHAPE_U256}},
+    {OP_HASH3, {SHAPE_U256, SHAPE_U256, SHAPE_U256}},
+    {OP_HASH4, {SHAPE_U256, SHAPE_U256, SHAPE_U256, SHAPE_U256}},
   };
   Checker *c = k->c;
   const Value *u = tyop(c, OP_U256, 0, NULL, NULL, NULL);
@@ -4777,15 +4782,25 @@ static int print_value(Machine *m, const Value *v, char *buf) {
   return value_print(m, NULL, 0, v, buf, PRINT_MAX) ? 1 : diag_fail(m->diag, "EVAL_PRINT", m->def, "the normal form exceeds the printer limits");
 }
 
+/* The Env of one call: NOW and CALLER come from the script. The script gives
+   no chainid and no self, so the guest run uses the defaults of `evm run`
+   (geth 1.14.12, S4, O12): the chain 1337 and the address of the bytes
+   "receiver". */
 static const Value *make_env(Machine *m, const Run *r, uint64_t now, const U256 *caller) {
-  const Value **args = arena_alloc(m->arena, 2u * sizeof *args);
+  static const U256 chainid = {{1337u, 0, 0, 0}};
+  static const U256 self = {{0x7265636569766572u, 0, 0, 0}};
+  const Value **args = arena_alloc(m->arena, 4u * sizeof *args);
   if (args == NULL) {
     diag_fail(m->diag, "OOM", m->def, "out of memory");
     return NULL;
   }
   args[0] = val_nat(m, now);
   args[1] = val_word(m, WORD_ADDR, caller);
-  return args[0] == NULL || args[1] == NULL ? NULL : val_op(m, VAL_OP, OP_CTOR, m->families[r->env].first_ctor, 0, args, 2u);
+  args[2] = val_word(m, WORD_U256, &chainid);
+  args[3] = val_word(m, WORD_ADDR, &self);
+  return args[0] == NULL || args[1] == NULL || args[2] == NULL || args[3] == NULL
+             ? NULL
+             : val_op(m, VAL_OP, OP_CTOR, m->families[r->env].first_ctor, 0, args, 4u);
 }
 
 /* One call `NOW CALLER NAME ARGS...` (D-6 to D-8). A trap is a revert: the

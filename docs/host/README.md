@@ -65,13 +65,13 @@ Slice K3a adds the contract types to the checker and the evaluator. Slice K3b ad
 The contract prelude is in `src/front/contract.c`. The front end loads it after `domain/domain.lang` and before the program. Its names are core names, thus a program cannot declare them again.
 
 ```
-family Env := makeEnv (now : Nat) (caller : Addr)
+family Env := makeEnv (now : Nat) (caller : Addr) (chainid : U256) (self : Addr)
 family Out := pay (payToken : Addr) (payTo : Addr) (payAmount : U256)
   | pull (pullToken : Addr) (pullFrom : Addr) (pullTo : Addr) (pullAmount : U256)
   | emit (emitTag : Nat) (emitFields : List U256)
 ```
 
-- `Env` gives the time of the call (`now`) and the address of the caller (`caller`).
+- `Env` gives the time of the call (`now`), the address of the caller (`caller`), the chain id (`chainid`) and the address of the contract (`self`).
 - `Out` is one effect of an entry. `pay` sends tokens to an address. `pull` moves tokens from an address. `emit` writes an event.
 - `emit` stays in slice K4a1. A program can also declare named events (refer to `## Events (slice K4a1)`).
 - Slice K4c writes a LOG only for a named event, thus `emit` has no EVM form. `langc build` refuses an entry that makes an `emit` (REFUSE_LOWER, `test/lower/emit.lang`). `langc check`, `langc eval` and `langc run` keep `emit`.
@@ -121,7 +121,7 @@ Why the rule is sound: each state in an entry comes from the input state, or fro
 NOW CALLER NAME ARGS...
 ```
 
-- `NOW` is a `Nat` literal. `CALLER` is an `Addr` literal: `0x` and 40 hex digits. The call gets `makeEnv NOW CALLER` as `env` and the current state as `s`.
+- `NOW` is a `Nat` literal. `CALLER` is an `Addr` literal: `0x` and 40 hex digits. The call gets `makeEnv NOW CALLER 1337u RECEIVER` as `env` and the current state as `s`. A script has no field for `chainid` and `self`: the guest run uses the `evm run` defaults, the chain 1337 and RECEIVER = 0x0000000000000000000000007265636569766572 (the bytes "receiver"). The chain gate test/precompile.sh sets the chain id 1 in its prestate config (O62).
 - `NAME` is an entry or a view. A helper or an unknown name is not a call.
 - Each argument has the literal form of its parameter type: `Nat` (for example `7`), `Flag` (`0` or `1`), `U256` (decimal digits or `0x` and 1 or more hex digits, then `u`, for example `5u` or `0xffu`) or `Addr`. Upper case and lower case hex digits are both correct.
 - Spaces, tabs and carriage returns separate the words.
@@ -236,7 +236,7 @@ Decode (slice K4b):
 
 Entry body (slice K4b):
 
-- `now` is the TIMESTAMP of the block and `caller` is CALLER, the sender of the call.
+- `now` is the TIMESTAMP of the block, `caller` is CALLER (the sender of the call), `chainid` is CHAINID and `self` is ADDRESS (the address of the contract).
 - `none` reverts with empty data.
 - A trap reverts with the 4 bytes of the `Trap()` selector, `0xae96083a`.
 - `some (pair STATE OUT)` writes each changed word field and each Map write with SSTORE. Then the block stops (STOP).

@@ -238,6 +238,145 @@ that a host cannot satisfy makes the status PARTIAL or HOST-LIMIT.
 - Examples: ledger-lang `Ref k` (indexed by `k : Kind`) and escrow-lang
   `Aggregation F` (indexed by `F : ChoiceRule`).
 
+### F16 Dependent eliminator
+
+- Formation: `elim P c1 ... cn x : P x` when `x : X`, `X` is `Sum A B` or
+  `Unit`, and `P : X -> Type k`. S7 (USER ruling S7, Q1): `X` can also be
+  a domain family with path constructors (F18) at its parameters and
+  indices, and then the motive binds the indices and the value:
+  `P : (idx) -> F params idx -> Type k`. A block sort (F19) is outside
+  `elim`.
+- Cases: for `Sum A B`, `c1 : (a : A) -> P (inl a)` and
+  `c2 : (b : B) -> P (inr b)`. For `Unit`, `c1 : P unit`. For a family, a
+  point case takes the fields and an induction binder after each recursive
+  field or path field, and gives `P idx (c params fields)`. A path case
+  gives `PathP (fun i => P idx (c .. i)) img0 img1`, and a squash case
+  gives the square over `P`.
+- Laws: `elim P f g (inl a) = f a`. `elim P f g (inr b) = g b`.
+  `elim P u unit = u`. On a family constructor, `elim` applies the case to
+  the fields and to the elims of the recursive fields; on a path
+  constructor at `r` it gives the case at `r`; on a squash at `r` and `s`
+  it gives the case at `r` and `s`. On a formal hcomp or a neutral value,
+  `elim` stays neutral (O22). Another scrutinee does not reduce.
+- Rules: another scrutinee type, a wrong case count, a wrong case type, a
+  motive without the index binders or a block sort gives `TYPE_MISMATCH`.
+  A wrong end of a path case gives `PATH_END`. `Prop` in the motive
+  telescope gives `NAME_UNKNOWN`. There is no `elim` on a `Path` (no K).
+- Examples: `examples/elim.lang` (elim on Size, Bag and Quot);
+  `orbitExt` in `examples/dao.lang`; `fromBagW` and the homotopies in
+  `examples/bagorbit.lang`.
+
+### F17 Glue and univalence
+
+- Formation: `Glue A phi (fun (_ : I) => [ k0 -> pack T0 e0, ... ]) : Type 0`
+  when `A : Type 0`, `phi : I`, each key `k : I` is in the outer context and
+  each branch is `pack T e` with `T : Type 0` and `e : Equiv T A` where its
+  key holds. The keys cover `phi` (`SYSTEM_COVER`). Two branches agree where
+  both keys hold (`SYSTEM_OVERLAP`). A branch of another type gives
+  `GLUE_EQUIV`. The tube binder must be `_` (`GLUE_BINDER`).
+- Introduction: `glue (fun (_ : I) => [ k0 -> t0, ... ]) a : Glue A phi sys`,
+  in check mode only, when `a : A` and each `t : T` where its key holds.
+  `unglue t` must be `a` where the key of `t` holds (`GLUE_BOUNDARY`).
+- Elimination: `unglue g : A` when `g : Glue A phi sys`. A term of another
+  type gives `UNGLUE_TYPE`.
+- Laws: where the key of the branch `pack T e` holds, `Glue A phi sys = T`,
+  `glue sys a = t` and `unglue g = witness e g`. `unglue (glue sys a) = a`.
+- Univalence: the domain definitions `isContr`, `fiber`, `isEquiv`, `Equiv`,
+  `idEquiv`, `isoToEquiv`, `ua` and `uaArrow` (`domain/domain.lang:92-154`).
+  `Equiv A B` is `Sigma (f : A -> B) (isEquiv A B f)`. `isoToEquiv A B f g s t
+  : Equiv A B` makes an equivalence from an isomorphism. `ua A B e :
+  Path (Type 0) A B` is the Glue line `Glue B (~i \/ i) [ ~i -> pack A e,
+  i -> pack B (idEquiv B) ]`. Transport along `ua A B e` at a closed value
+  `a` gives `witness e a`. `uaArrow` gives a path of functions over `ua A B
+  e` (agda/cubical `ua->`).
+- Kan operations: `hcomp` at a Glue type is a `glue` of the compositions in
+  the branches and in `A`. `hcomp` at `Type 0` is a Glue type. `hcomp` at
+  `Type n` with `n != 0` gives `HCOMP_UNIVERSE`. The `unglue` of an
+  `hcomp` at a Glue type composes in the base type. `elim` reduces when
+  that composition gives a constructor and stays neutral when it remains
+  stuck (`docs/PLAN.md` O22, `examples/orbit.lang` `gElim`).
+
+### F18 Indexed higher inductive family (HIIT)
+
+- Formation: `family D (p : P) : J1 -> ... -> Jk -> Type 0 := ...` in
+  `domain/domain.lang` only (kit rule R1). The type after `:` is the index
+  telescope: a Pi telescope that ends in `Type 0`. Its depth is the index
+  count. A family without `:` is uniform, as before. `Prop` and `SProp` in
+  the telescope give `NAME_UNKNOWN` (reserved, rule R4).
+- Introduction: each constructor states its result after its fields, and a
+  path constructor states it after its interval fields and before its
+  boundary: `bagNil : Bag A sz0`, `bagCons (n : Size) (a : A) (t : Bag A n)
+  : Bag A (szS n)`. A constructor with no result, a result whose head is
+  not the family at its parameters, or an end of a path constructor at
+  another index gives `HIT_INDEX`. An application takes the parameters and
+  the fields; the index comes from the result.
+- Elimination: `fold T c1 ... cn x : T` when `x : D p j`. The target `T` is
+  a constant type from the hint, as for a uniform family. A case takes the
+  fields: a recursive field at any index becomes `T`, and an index field
+  stays. A wrong case count or a missing squash case gives `TYPE_MISMATCH`.
+- Laws: at each index, the fold of a point constructor is its case at the
+  folded fields, the fold of a path constructor is its case at the
+  interval (`fold_path`), and the fold of a square is its case at both
+  intervals (`fold_square`). The fold of a formal hcomp at an indexed sort
+  is an hcomp at the target. `transp` at an indexed sort stays neutral
+  (`docs/PLAN.md` section 8, B2 safety).
+- Sets: a sort is a set only by a 2-dimensional squash constructor at each
+  index, in the form of Trunc0 squash0. No conversion makes a sort a set
+  (`PATH_UIP`).
+- Examples: `Size` (`domain/domain.lang`) and, since S3 (rule R1), the
+  indexed families `ChoiceBag n`, `OrbitN n` and `Pos n`. `Bag A` is now
+  the free commutative monoid, with no index. `examples/hiit.lang` folds a
+  bag into `Trunc0 Size`.
+  S7 adds `Pos n` (the n positions of a bag) and `Word n` (the words of
+  adjacent swaps at n) (`domain/domain.lang`).
+  `examples/bagorbit.lang` gives `bagOrbit : (k : Size) -> Equiv (OrbitN
+  k) (ChoiceBag k)`. S3 (rule R1) removes `Quot`: `OrbitN` and `ChoiceBag`
+  are families `Size -> Type 0` with no type parameter.
+
+### F19 Inductive-inductive block (QIIT)
+
+- Formation: `family A (p : P) := ... and B (p : P) : A p -> Type 0 := ...`
+  in `domain/domain.lang` only. The keyword `and` joins the sorts of a
+  block. All headers of a block bind first, then the point constructors of
+  all sorts, then the path constructors of all sorts. Thus a field can
+  name a later sort and a boundary can name a point constructor of a later
+  sort. A header (its parameters or its index types) that names its own
+  sort or a later sort of the block gives `BLOCK_ORDER`.
+- Introduction: the constructors of each sort, as in F18 for an indexed
+  sort. The head of a recursive field is a sort of the block at its
+  parameters (`DOMAIN_FAMILY` otherwise). A recursive field can be the
+  index of a later recursive field: `adopt (adoptBase : Charter)
+  (adoptRule : Ratified adoptBase)`.
+- Elimination: `fold T1 ... Tn c1 ... cm x : Ti` when `x` is a value of the
+  sort i of a block of n sorts. The first n arguments are the target
+  types, one for each sort in declaration order. Then come the cases, one
+  for each constructor of each sort, sort by sort in declaration order.
+  The value is the last argument. The sorts share the parameter telescope
+  of the scrutinee: its parameters must inhabit the telescope of each
+  sort. A wrong argument count, a missing case or a parameter mismatch
+  gives `TYPE_MISMATCH`. A one-sort family keeps the hint form of F6.
+- Laws: the fold of a constructor of the sort i is its case at the folded
+  fields. A field of the sort j folds with the same cases at `Tj`. A path
+  field folds at the sort under the path. The path and square laws of F18
+  hold at each sort. `transp` at a sort of a block stays neutral.
+- Examples: `Charter` and `Ratified c` (`domain/domain.lang`; S3 fixes the
+  rule type to `Size`, rule R1):
+  `genesis`, `adopt`, `ratify`, the path constructor `adoptTwice` (law 4
+  in the type: a second adoption of the same rule is a path from the
+  first) and the squash constructors `charterSquash` and `ratifiedSquash`.
+  `examples/qiit.lang` folds a charter into `Trunc0 Size` (`adopted`,
+  `adoptedZero`, `adoptedTwo`, `adoptedLaw`).
+
+### Kit note: Fin
+
+`Fin` is not a former. `Fin n : Type 0` when `n : Nat`. Its values are the
+Nat literals below `n` (`FIN_RANGE`). `finAdd n a b` and `finNeg n a` are the
+addition and the negation modulo `n`. A function from `Fin n` with a literal
+`n` that fails the ordinary check is checked at each literal below `n`
+(`FIN_CASE`). `Fin`, `finAdd` and `finNeg` have VIS_INTERNAL (`docs/PLAN.md`
+O23): a guest program that uses them gives `REFUSE_KIT`. Only the kit mode
+`langc --kit` admits them.
+
 ## 4. Status words
 
 | Word | Meaning |

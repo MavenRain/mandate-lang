@@ -1,0 +1,4 @@
+-- A call script for examples/precompile.lang (S4, O62). The guest run gives the Env fields
+-- chainid and self the `evm run` defaults: the chain 1337 and the address of the bytes "receiver".
+1 0x00000000000000000000000000000000000000aa chainWord
+2 0x00000000000000000000000000000000000000aa selfAddr

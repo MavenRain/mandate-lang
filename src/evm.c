@@ -229,6 +229,60 @@ static int emit_binary(Emit *e, const IrExpr *x) {
     asm_push(a, e->scratch);
     asm_op(a, EVM_OP_SHA3);
     return 1;
+  case IR_OP_KECCAK712:
+    /* LEFT is on top, and the preimage is 0x19 0x01, LEFT, then RIGHT (S4,
+       O12). The 66 bytes start at the scratch and end 2 bytes into the next
+       word (a PRECOMPILE output block), so that word is saved first and
+       stored again after the SHA3. */
+    emit_load(a, e->scratch + 64);
+    asm_push(a, 0x1901);
+    asm_push(a, 240);
+    asm_op(a, EVM_OP_SHL);
+    emit_store(a, e->scratch);
+    asm_op(a, EVM_OP_SWAP1);
+    emit_store(a, e->scratch + 2);
+    asm_op(a, EVM_OP_SWAP1);
+    emit_store(a, e->scratch + 34);
+    asm_push(a, 66);
+    asm_push(a, e->scratch);
+    emit_ops(a, (const Op[]){EVM_OP_SHA3, EVM_OP_SWAP1}, 2);
+    emit_store(a, e->scratch + 64);
+    return 1;
+  case IR_OP_PAIR:
+    /* Both words stay on the stack, LEFT on top: an operand of KECCAK3 and
+       KECCAK4 (S4, Q-S4-1). */
+    return 1;
+  case IR_OP_KECCAK3:
+    /* LEFT is on top, then the RIGHT pair: the preimage is the 3 words. The
+       96 bytes end one word past the scratch (a PRECOMPILE output block), so
+       that word is saved first and stored again after the SHA3 (O65). */
+    emit_load(a, e->scratch + 64);
+    for (uint64_t word = 0; word < 3u; word++) {
+      asm_op(a, EVM_OP_SWAP1);
+      emit_store(a, e->scratch + 32u * word);
+    }
+    asm_push(a, 96);
+    asm_push(a, e->scratch);
+    emit_ops(a, (const Op[]){EVM_OP_SHA3, EVM_OP_SWAP1}, 2);
+    emit_store(a, e->scratch + 64);
+    return 1;
+  case IR_OP_KECCAK4:
+    /* The LEFT pair is on top, then the RIGHT pair: the preimage is the 4
+       words. The 128 bytes end two words past the scratch, so those words
+       are saved first and stored again after the SHA3. */
+    emit_load(a, e->scratch + 64);
+    emit_load(a, e->scratch + 96);
+    for (uint64_t word = 0; word < 4u; word++) {
+      asm_op(a, EVM_OP_SWAP2);
+      emit_store(a, e->scratch + 32u * word);
+    }
+    asm_push(a, 128);
+    asm_push(a, e->scratch);
+    emit_ops(a, (const Op[]){EVM_OP_SHA3, EVM_OP_SWAP1}, 2);
+    emit_store(a, e->scratch + 96);
+    asm_op(a, EVM_OP_SWAP1);
+    emit_store(a, e->scratch + 64);
+    return 1;
   case IR_OP_DIV:
   case IR_OP_MOD: return 0;
   }
@@ -246,7 +300,12 @@ static int emit_expr(Emit *e, const IrExpr *x) {
     emit_ops(e->a, (const Op[]){EVM_OP_ADD, EVM_OP_MLOAD}, 2);
     return 1;
   case IR_EXPR_WORD: asm_push_word(e->a, x->word); return 1;
-  case IR_EXPR_ENV: asm_op(e->a, x->field == IR_ENV_NOW ? EVM_OP_TIMESTAMP : EVM_OP_CALLER); return 1;
+  case IR_EXPR_ENV: { /* the IrEnv order (C-K4-12, S4 O12) */
+    static const Op ops[] = {EVM_OP_TIMESTAMP, EVM_OP_CALLER, EVM_OP_CHAINID, EVM_OP_ADDRESS};
+    if (x->field >= 4u) return 0;
+    asm_op(e->a, ops[x->field]);
+    return 1;
+  }
   case IR_EXPR_SLOAD:
     if (!emit_expr(e, x->left)) return 0;
     asm_op(e->a, EVM_OP_SLOAD);

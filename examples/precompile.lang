@@ -52,3 +52,57 @@ def ownerWord : U256 := addrToU256 0x00000000000000000000000000000000000000aa
 def recoverGood : Addr := ecrecover 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 27 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 0x789d1dd423d25f0772d2748d60f7e4b81bb14d086eba8e8e8efb6dcff8a4ae02u
 
 def recoverBad : Addr := ecrecover 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 27 0x38d18acb67d25c8bb9942764b62f18e17054f66a817bd4295423adf9ed98873eu 0u
+
+-- hash712 d g (S4, O12): keccak256 of the bytes 0x19 0x01, d and g, the EIP-712 digest of a domain separator and a struct hash.
+def hash712v : (env : Env) -> (s : State) -> (d g : U256) -> U256 :=
+  fun (env : Env) (s : State) (d g : U256) => hash712 d g
+
+-- hash3 a b c and hash4 a b c d (S4, Q-S4-1): keccak256 of the 3 or 4 words, as for the EIP-712 struct hashes.
+def hash3v : (env : Env) -> (s : State) -> (a b c : U256) -> U256 :=
+  fun (env : Env) (s : State) (a b c : U256) => hash3 a b c
+
+def hash4v : (env : Env) -> (s : State) -> (a b c d : U256) -> U256 :=
+  fun (env : Env) (s : State) (a b c d : U256) => hash4 a b c d
+
+-- chainid and self of the Env (S4, O12): the EIP-712 domain holds both (PLAN 4.8).
+def chainWord : (env : Env) -> (s : State) -> U256 :=
+  fun (env : Env) (s : State) => chainid env
+
+def selfAddr : (env : Env) -> (s : State) -> Addr :=
+  fun (env : Env) (s : State) => self env
+
+def hash712Zero : U256 := hash712 0u 0u
+
+-- The Mail example of EIP-712: hash712 of its domain separator and its struct hash is its digest, and ecrecover of the digest and its signature gives its signer.
+def mailDigest : U256 := hash712 0xf2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090fu 0xc52c0ee5d84264471806290a3f2c4cecfc5490626bf912d01f240d7a274b371eu
+
+def mailSigner : Addr := ecrecover mailDigest 28 0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9du 0x07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b91562u
+
+def hash3Zero : U256 := hash3 0u 0u 0u
+
+def hash4Zero : U256 := hash4 0u 0u 0u 0u
+
+-- The struct hash of the Mail example: hash4 of the Mail typeHash, the Person hashes of from and to (each hash3 of the Person typeHash, the keccak256 of the name and the wallet) and the keccak256 of the contents. It is the second word of mailDigest.
+def mailHash : U256 := hash4 0xa0cedeb2dc280ba39b857546d74f5549c3a1d7bdc2dd96bf881f76108e23dac2u (hash3 0xb9d8c78acf9b987311de6c7b45bb6a9c8e1bf361fa7fd3467a2163f994c79500u 0x8c1d2bd5348394761719da11ec67eedae9502d137e8940fee8ecd6f641ee1648u 0x000000000000000000000000cd2a3d9f938e13cd947ec05abc7fe734df8dd826u) (hash3 0xb9d8c78acf9b987311de6c7b45bb6a9c8e1bf361fa7fd3467a2163f994c79500u 0x28cac318a86c8a0a6a9156c2dba2c8c2363677ba0514ef616592d81557e679b6u 0x000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbu) 0xb5aadf3154a261abdd9086fc627b61efca26ae5702701d05cd2305f7c52a2fc8u
+
+-- Hash, Sig and signer (S4, PLAN section 3). A Sig is (v, r, s); v is a Nat, the v of ecrecover (O63).
+def Hash : Type 0 := U256
+
+def Sig : Type 0 := Prod Nat (Prod U256 U256)
+
+def sig : (v : Nat) -> (r w : U256) -> Sig := fun (v : Nat) (r w : U256) => pair v (pair r w)
+
+-- signer d g x: the address that signed the EIP-712 digest of the domain separator d and the struct hash g.
+-- An invalid signature gives the address 0 (R18): the address 0 is no signer.
+def signer : (d g : Hash) -> (x : Sig) -> Addr :=
+  fun (d g : Hash) (x : Sig) => ecrecover (hash712 d g) (first x) (first (second x)) (second (second x))
+
+-- signedAs d g x a: a is not 0 and signer d g x = a (the zero guard of signedBy).
+def signedAs : (d g : Hash) -> (x : Sig) -> (a : Addr) -> Flag :=
+  fun (d g : Hash) (x : Sig) (a : Addr) =>
+    flagIf (addrEq a 0x0000000000000000000000000000000000000000) flagNo (addrEq (signer d g x) a)
+
+-- signer of the Mail example: the address of mailSigner. A zero s gives the address 0 (no signer).
+def mailSignerOf : Addr := signer 0xf2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090fu 0xc52c0ee5d84264471806290a3f2c4cecfc5490626bf912d01f240d7a274b371eu (sig 28 0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9du 0x07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b91562u)
+
+def noSigner : Addr := signer 0xf2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090fu 0xc52c0ee5d84264471806290a3f2c4cecfc5490626bf912d01f240d7a274b371eu (sig 28 0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9du 0u)

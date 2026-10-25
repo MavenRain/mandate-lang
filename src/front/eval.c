@@ -26,7 +26,8 @@ static const char *const OP_NAMES[] = {
   [OP_FLAG_IF] = "flagIf", [OP_U256_ADD] = "u256Add", [OP_U256_SUB] = "u256Sub",
   [OP_U256_LE] = "u256Le",
   [OP_U256_EQ] = "u256Eq", [OP_TO_U256] = "toU256",
-  [OP_NAT_DIV] = "natDiv", [OP_NAT_MOD] = "natMod", [OP_HASH] = "hash", [OP_ECRECOVER] = "ecrecover",
+  [OP_NAT_DIV] = "natDiv", [OP_NAT_MOD] = "natMod", [OP_HASH] = "hash", [OP_HASH712] = "hash712", [OP_ECRECOVER] = "ecrecover",
+  [OP_HASH3] = "hash3", [OP_HASH4] = "hash4",
   [OP_ADDR_TO_U256] = "addrToU256",
   [OP_ADDR_EQ] = "addrEq", [OP_PROJ] = "?", [OP_KMAP] = "Map", [OP_KMAP_OF] = "mapOf",
   [OP_KMAP_GET] = "mapGet", [OP_KMAP_SET] = "mapSet",
@@ -51,7 +52,8 @@ static const unsigned char OP_ARITY[] = {
   [OP_NAT_EQ] = 2, [OP_NAT_LE] = 2, [OP_FLAG_IF] = 3, [OP_U256_ADD] = 2,
   [OP_U256_SUB] = 2, [OP_U256_LE] = 2,
   [OP_U256_EQ] = 2, [OP_TO_U256] = 1, [OP_ADDR_EQ] = 2,
-  [OP_NAT_DIV] = 2, [OP_NAT_MOD] = 2, [OP_HASH] = 2, [OP_ECRECOVER] = 4,
+  [OP_NAT_DIV] = 2, [OP_NAT_MOD] = 2, [OP_HASH] = 2, [OP_HASH712] = 2, [OP_ECRECOVER] = 4,
+  [OP_HASH3] = 3, [OP_HASH4] = 4,
   [OP_ADDR_TO_U256] = 1,
   [OP_PROJ] = 1, [OP_KMAP] = 2, [OP_KMAP_OF] = VARIES, [OP_KMAP_GET] = 3, [OP_KMAP_SET] = 4,
   [OP_INTERVAL] = 0, [OP_TRANSP] = 3,
@@ -1374,6 +1376,46 @@ static const Value *hash_words(Machine *m, const Value *const *a, uint32_t n) {
   return word_value(m, &r);
 }
 
+/* hash712 x y (S4, O12): KECCAK256 of the bytes 0x19 0x01 and the 64 packed
+   bytes, the EIP-712 digest of the domain separator X and the struct hash Y,
+   as IR_OP_KECCAK712. */
+static const Value *hash712_words(Machine *m, const Value *const *a, uint32_t n) {
+  const Value *out;
+  unsigned char data[66] = {0x19, 0x01}, digest[32];
+  U256 r;
+  if (!word_args(m, OP_HASH712, VAL_WORD, a, n, &out))
+    return out;
+  word_bytes(a[0]->word, data + 2);
+  word_bytes(a[1]->word, data + 34);
+  keccak256(data, sizeof data, digest);
+  for (uint32_t k = 0; k < 4u; k++) {
+    r.limb[3u - k] = 0;
+    for (uint32_t j = 0; j < 8u; j++)
+      r.limb[3u - k] = (r.limb[3u - k] << 8) | digest[8u * k + j];
+  }
+  return word_value(m, &r);
+}
+
+/* hash3 a b c and hash4 a b c d (S4, Q-S4-1): KECCAK256 of the 96 or 128
+   packed bytes of the words, as IR_OP_KECCAK3 and IR_OP_KECCAK4. */
+static const Value *hash_n_words(Machine *m, Op op, const Value *const *a, uint32_t n) {
+  const Value *out;
+  unsigned char data[128], digest[32];
+  uint32_t count = n < 4u ? n : 4u;
+  U256 r;
+  if (!word_args(m, op, VAL_WORD, a, n, &out))
+    return out;
+  for (uint32_t i = 0; i < count; i++)
+    word_bytes(a[i]->word, data + 32u * i);
+  keccak256(data, 32u * (size_t)count, digest);
+  for (uint32_t k = 0; k < 4u; k++) {
+    r.limb[3u - k] = 0;
+    for (uint32_t j = 0; j < 8u; j++)
+      r.limb[3u - k] = (r.limb[3u - k] << 8) | digest[8u * k + j];
+  }
+  return word_value(m, &r);
+}
+
 /* addrToU256 a (S2, R20): the same word in the U256 sort. */
 static const Value *addr_to_u256(Machine *m, const Value *const *a, uint32_t n) {
   const Value *out;
@@ -2060,6 +2102,9 @@ static const Value *transp_data(Machine *m, const Value *head, const Value *line
   case OP_NAT_DIV:
   case OP_NAT_MOD:
   case OP_HASH:
+  case OP_HASH712:
+  case OP_HASH3:
+  case OP_HASH4:
   case OP_ECRECOVER:
   case OP_ADDR_TO_U256:
   case OP_PROJ:
@@ -3070,6 +3115,11 @@ static const Value *reduce_op(Machine *m, Op op, uint32_t inst, uint32_t field, 
     return nat_divmod(m, op, a, n);
   case OP_HASH:
     return hash_words(m, a, n);
+  case OP_HASH712:
+    return hash712_words(m, a, n);
+  case OP_HASH3:
+  case OP_HASH4:
+    return hash_n_words(m, op, a, n);
   case OP_ADDR_TO_U256:
     return addr_to_u256(m, a, n);
   case OP_ECRECOVER:

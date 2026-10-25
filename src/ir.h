@@ -48,13 +48,19 @@ typedef enum {
   IR_OP_MIN,       /* the smaller operand */
   IR_OP_KECCAK,    /* keccak256(left . right), each a 32-byte word */
   IR_OP_WORD_ADD,  /* the sum modulo 2^256 (a List word slot, C-c9-1) */
-  IR_OP_MOD        /* left modulo right; traps when right is 0 (sealed-lang S2) */
+  IR_OP_MOD,       /* left modulo right; traps when right is 0 (sealed-lang S2) */
+  IR_OP_KECCAK712, /* keccak256(0x19 0x01 . left . right), the EIP-712 digest (S4, O12) */
+  IR_OP_PAIR,      /* the two words, left on top: only an operand of KECCAK3 and KECCAK4 (S4) */
+  IR_OP_KECCAK3,   /* keccak256(left . right), right a PAIR: the 3 words of hash3 (S4, Q-S4-1) */
+  IR_OP_KECCAK4    /* keccak256(left . right), each a PAIR: the 4 words of hash4 (S4, Q-S4-1) */
 } IrOp;
 
 /* The call data that IR_EXPR_ENV reads (C-K4-12). */
 typedef enum {
-  IR_ENV_NOW,   /* the block time: EVM TIMESTAMP */
-  IR_ENV_CALLER /* the sender: EVM CALLER */
+  IR_ENV_NOW,     /* the block time: EVM TIMESTAMP */
+  IR_ENV_CALLER,  /* the sender: EVM CALLER */
+  IR_ENV_CHAINID, /* the chain id: EVM CHAINID (S4, O12) */
+  IR_ENV_SELF     /* the account that runs the code: EVM ADDRESS (S4, O12) */
 } IrEnv;
 
 typedef enum {

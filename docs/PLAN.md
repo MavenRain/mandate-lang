@@ -61,6 +61,23 @@ recommendations for rulings."
 - Q-S1-7 (a): the `autoLimit` rule of Q6 (a) stays; S8 adds a G3 row
   below `autoLimit` and one above it.
 
+USER rulings (2026-10-24, S4 s2 Step 0, by AskUserQuestion): all (a).
+
+- Q-S2-1 (a): drop the contract writer of bridge-lang; the mandate
+  contract writer comes in S7.
+- Q-S2-2 (a): drop the ZK surface of orbit-lang S8 B2b; the policy proof
+  surface comes in S9 (4.9).
+- Q-S2-3 (a): the failed-STATICCALL revert path of lower.c stays without
+  a test; the S9 STATICCALL policy verifier op adds a failing precompile
+  row.
+- Q-S2-4 (a): examples/dao.lang keeps the DAO prelude as kernel text
+  without `b0`, `w0`, `c0` and `complete`.
+- Q-S3-1 (a): port F16 to F19, the Fin kit note and their matrix rows
+  from bridge-lang formers/FORMERS.md as a docs change (S4 s3).
+- Q-S3-2 (a): `bagComm` stays the swap of 4.4.
+- Q-S4-1 (a): fixed-arity `hash3` and `hash4` with the plumbing of
+  `hash` (S4 s3).
+
 Builder calls (NOT ruled; section 10 gives each one, section 11 gives the
 questions):
 
@@ -131,7 +148,7 @@ and calldata bytes in and one word out, for the policy verifier.
 | Name | Kind | Reading |
 |---|---|---|
 | Hash | defined | `U256`, one keccak256 word |
-| Sig | defined | `U256 * U256 * U256` (v, r, s) |
+| Sig | defined | `Nat * U256 * U256` (v, r, s); v is the `Nat` of `ecrecover` (O63) |
 | signer | defined | `ecrecover` of an EIP-712 digest; the zero address is no signer |
 | Mandate | defined | a record: `owner`, `agent`, `viewer`, `vault`, `token`, `cap`, `autoLimit`, `expiry`, `id`, `policyVerifier`, `policyId` (4.1, 4.9) |
 | Listing | defined | `(merchant : Addr) * (sku : U256) * (price : U256) * (maxQty : U256)` |
@@ -484,7 +501,7 @@ call (S9).
 | S1 | USER rulings on the questions of section 11; record them; read arXiv 2609.11757 and check the attack mapping (O4); plan the zkpolicy condition (Q10 (b), 4.9) | DONE |
 | S2 | Kernel port (section 6); the gate counts of the source | DONE: from bridge-lang 174f975 and intent-lang ef5abe8; 387 source files: KEEP 291, ADAPT 23, DROP 73, plus 5 new files (field.c/h, secp256k1.c/h, secptool.c); src 36 to 32 files (15600 to 13733 lines), test 295 to 242 (6621 to 5017), examples 53 to 42 (3226 to 2255); gate EXIT 0: examples 52 to 41, check refusals 188 to 168, kit-only refusals 22 to 19, evals 277 to 136, lower refusals 16 to 15, precompile steps 128 to 11, runs 5, mock 13 rows, diff 15 rows; the prove, contract, ring and differential rows are cut; O32 to O56; Q-S2-1 to Q-S2-4 OPEN |
 | S3 | R1 in this repo: `REFUSE_CELL`, the former matrix as CM and CC rows, `Bag` with `swap` | DONE (2026-10-24): base 9a1fc6c, tree df9ac214 (O57); `REFUSE_CELL` HAVE (src/front/check.c, test/fronttool.c); formers/FORMERS.md section 5 has the CM row (`Bag`, `FreeMon`) and the CC row (`Stream`); `Bag` HAVE, `bagComm` is the swap (O59); new check row test/check/cart-cons-swap.lang REFUSE_DATA (O61); gate EXIT 0: examples 41, parse refusals 19, check refusals 169 (168 + 1), kit-only refusals 19, evals 136, run refusals 10, builds 3, lower refusals 15, checks 32; O57 to O61; Q-S3-1 and Q-S3-2 OPEN; Q-S2-1 to Q-S2-4 stay OPEN |
-| S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | PLANNED |
+| S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | DONE (2026-10-24): base 68efac0. `Env` `chainid` and `self` (CHAINID, ADDRESS); `hash712`, `hash3` and `hash4` (Q-S4-1 (a), O67); `Hash`, `Sig`, `signer` and `signedAs` (examples/precompile.lang); `mailHash` gives the struct hash of the EIP-712 Mail example by `hash3` and `hash4`; formers/FORMERS.md F16 to F19 and the Fin kit note (Q-S3-1 (a); the bridge-lang section 5 has no F16 to F19 rows); gate EXIT 0: evals 144, precompile 19 steps; O61 stays OPEN; O62 to O67 |
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | PLANNED |
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | PLANNED |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | PLANNED |
@@ -729,6 +746,29 @@ call (S9).
   REFUSE_CELL occurs only for domain text. test/check/cart-cons-swap.lang
   gives REFUSE_DATA. A test/fronttool.c row with this cart in domain text
   would give REFUSE_CELL. S3 did not add it. Builder call.
+- O62 (S4): the guest run has no script field for `chainid` and `self`.
+  make_env uses the `evm run` defaults: the chain 1337 and the address of
+  the bytes "receiver". The chain gate test/precompile.sh uses the
+  prestate config of test/evmchain.sh, which sets the chain id 1; the
+  receiver is the same address. Each side compares with its own constant
+  (test/run/precompile.out 1337u, test/precompile.sh 1). A script
+  directive can come later.
+- O63 (S4): the v of `Sig` is a `Nat` (the v of the kit `ecrecover`), not
+  a `U256`. Section 3 now says `Nat * U256 * U256`.
+- O64 (S4): the EIP-712 domain separator and the struct hashes of 4.8
+  need keccak256 of 3 or 4 words; `hash` takes 2, and `hash (hash a b) c`
+  is a different word. Q-S4-1 RULED (a): `hash3` and `hash4` (S4 s3).
+- O65 (S4): KECCAK712 writes 2 bytes past the 2-word scratch into the
+  first PRECOMPILE output block; src/evm.c saves and restores that word.
+  A 3-word scratch moves every output block (the byte gates change).
+- O66 (S4): no doc lists the guest ops (`rg -n -w hash docs` finds
+  docs/PLAN.md only). S4 adds `hash3` and `hash4` and does not add an op
+  list. A later slice can add the list to docs/host/README.md.
+- O67 (S4): the IR ops are binary. `hash3` lowers to IR_OP_KECCAK3 with an
+  IR_OP_PAIR right operand, and `hash4` lowers to IR_OP_KECCAK4 with 2
+  IR_OP_PAIR operands. A PAIR leaves 2 words on the stack and is not a
+  value. KECCAK3 and KECCAK4 write 1 and 2 words past the 2-word scratch;
+  they save these words and store them again after the SHA3 (as O65).
 
 ## 11. Questions for the USER (S1)
 
@@ -802,7 +842,7 @@ Q1 to Q10 are RULED 2026-10-24 (section 1). New questions (S1), RULED
   `Gate` also needs `Confirmed` when a line has `price l > floor l`.
   RULED (a).
 
-New questions (S2), OPEN. S2 applied the (a) option where the text says
+New questions (S2 and S3): all RULED (a) 2026-10-24 (section 1). S2 applied the (a) option where the text says
 "applied". A ruling (b) undoes that part in S3.
 
 - Q-S2-1 (O34): the contract writer of bridge-lang. (a) drop it now; the
@@ -826,3 +866,11 @@ New questions (S2), OPEN. S2 applied the (a) option where the text says
 - Q-S3-2 (O59): the name of the swap. (a) keep `bagComm` as the swap of
   4.4; PLAN 4.4 names it. RECOMMENDED; applied. (b) rename `bagComm` to
   `swap` in domain/domain.lang, the examples and the eval rows.
+
+New questions (S4), RULED (a) 2026-10-24 (section 1):
+
+- Q-S4-1 (O64): keccak256 of 3 or 4 words for the EIP-712 domain
+  separator and the struct hashes of 4.8. (a) fixed-arity `hash3` and
+  `hash4` with the plumbing of `hash` and the save and restore of
+  KECCAK712 for the words past the scratch. RECOMMENDED; RULED. (b) one
+  `hashWords : List U256 -> U256` that lowers only a literal list.
