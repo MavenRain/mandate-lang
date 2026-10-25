@@ -400,7 +400,7 @@ static const struct {
     {OP_NAT_LE, IR_OP_LE},     {OP_U256_ADD, IR_OP_ADD_TRAP}, {OP_U256_SUB, IR_OP_SUB},
     {OP_U256_LE, IR_OP_LE},    {OP_U256_EQ, IR_OP_EQ},        {OP_ADDR_EQ, IR_OP_EQ},
     {OP_HASH, IR_OP_KECCAK},   {OP_NAT_DIV, IR_OP_DIV},       {OP_NAT_MOD, IR_OP_MOD},
-    {OP_HASH712, IR_OP_KECCAK712},
+    {OP_HASH712, IR_OP_KECCAK712}, {OP_U256_MUL, IR_OP_MUL_TRAP},
 };
 
 static int form_at(Low *l, uint32_t field) {

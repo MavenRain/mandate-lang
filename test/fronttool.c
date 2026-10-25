@@ -143,6 +143,15 @@ int main(void) {
   ok &= guest("def choose : Sum Unit Unit -> Unit := "
               "elim (fun (s : Sum Unit Unit) => Unit) (fun u => u) (fun u => u)", NULL);
   ok &= normal_roundtrip("Unit -> Unit", "fun (u : Unit) => elim (fun (v : Unit) => Unit) unit u");
+  ok &= normal_roundtrip("Flag -> Unit", "fun (f : Flag) => elim (fun (x : Flag) => Unit) unit unit f");
+  ok &= normal_roundtrip_in("family Box := box", "Flag -> Box",
+                           "fun (f : Flag) => elim (fun (x : Flag) => Box) box box f");
+  ok &= normal_roundtrip("Flag -> Unit -> Unit", "fun (f : Flag) (u : Unit) => "
+                         "elim (fun (x : Flag) => Unit -> Unit) (fun v => v) (fun v => unit) f u");
+  ok &= normal_roundtrip("Unit -> Flag -> Unit", "fun (u : Unit) (f : Flag) => "
+                         "elim (fun (x : Unit) => Flag -> Unit) (fun v => unit) u f");
+  ok &= normal_roundtrip_in("family Box := box", "Box -> Flag -> Unit",
+                           "fun (b : Box) (f : Flag) => elim (fun (x : Box) => Flag -> Unit) (fun v => unit) b f");
   ok &= normal_roundtrip("Sum Unit Unit -> Unit", "fun (s : Sum Unit Unit) => "
                          "elim (fun (t : Sum Unit Unit) => Unit) (fun u => u) (fun u => u) s");
   ok &= normal_roundtrip("(A : Type 0) -> (s : Sum A Unit) -> Path (Sum A Unit) s s", "fun (A : Type 0) (s : Sum A Unit) => "
@@ -295,6 +304,12 @@ int main(void) {
   ok &= domain("family Phantom (A : Type 0) := phantom", "REFUSE_CELL");
   ok &= domain("family Even (A : Type 0) := ez | es (oddPrev : Odd A) and Odd (A : Type 0) := os (evenPrev : Even A)", "REFUSE_CELL");
   ok &= domain("family Two (A : Type 0) := genL (genLOf : A) | genR (genROf : A)", "REFUSE_CELL");
+  /* S6, Q-S6-1 (a): a strictly positive field `D -> F params`, D closed
+     data. F left of the arrow and a D with a parameter stay refused. */
+  ok &= domain("family Ask (A : Type 0) := askPure (askOf : A) | askWord (askWordOf : U256) (askNext : U256 -> Ask A)", NULL);
+  ok &= domain("family NegAsk (A : Type 0) := negPure (negOf : A) | negAsk (negNext : NegAsk A -> U256)", "REFUSE_CELL");
+  ok &= domain("family ParAsk (A : Type 0) := parPure (parOf : A) | parAsk (parNext : A -> ParAsk A)", "REFUSE_CELL");
+  ok &= domain("family SigAsk (A : Type 0) := sigPure (sigOf : A) | sigAsk (sigNext : Prod Nat (Prod U256 U256) -> SigAsk A)", NULL);
   /* Aliases and indices must not hide type arguments from the cell check. */
   ok &= domain("def U : Type 1 := Type 0\n"
                "family AliasList (A : U) := aliasNil | aliasCons (aliasHead : A) (aliasTail : AliasList A)", "REFUSE_CELL");

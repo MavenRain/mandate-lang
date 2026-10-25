@@ -173,3 +173,10 @@ line-wrong-merchant.lang PATH_END
 line-over-max.lang PATH_END
 cart-not-canonical.lang PATH_END
 cart-same-listing.lang PATH_END
+cred-other-session.lang PATH_END
+confirm-wrong-claim.lang PATH_END
+spend-over-cap.lang PATH_END
+spend-after-expiry.lang PATH_END
+flag-elim-case.lang TYPE_MISMATCH
+elim-nat-motive.lang TYPE_MISMATCH
+confirm-no-case.lang TYPE_MISMATCH

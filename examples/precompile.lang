@@ -34,6 +34,16 @@ def signedBy : (env : Env) -> (s : State) -> (h : U256) -> (v : Nat) -> (r w : U
 def hashv : (env : Env) -> (s : State) -> (a b : U256) -> U256 :=
   fun (env : Env) (s : State) (a b : U256) => hash a b
 
+-- u256Mul (S6 s1, Q-S6-2 (a)): the product. An overflow past 2^256 - 1 traps (a revert on the chain).
+def mulV : (env : Env) -> (s : State) -> (a b : U256) -> U256 :=
+  fun (env : Env) (s : State) (a b : U256) => u256Mul a b
+
+def mulGood : U256 := u256Mul 9u 4u
+
+def mulZero : U256 := u256Mul 0u 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffu
+
+def mulOver : U256 := u256Mul 2u 0x8000000000000000000000000000000000000000000000000000000000000000u
+
 -- leaf i: the parent index of leaf i plus its side bit (natDiv and natMod of one Nat).
 def leaf : (i : Nat) -> Nat := fun (i : Nat) => natAdd (natDiv i 2) (natMod i 2)
 
@@ -154,6 +164,11 @@ def viewType : Hash := 0x222ffd999f91ddddd8de1984b4ebbfda91177924d318fed0894cf2f
 
 def domainType : Hash := 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218u
 
+-- The type hashes of S6 s1 (O87, O88): keccak256 of `Cred(uint256 sid,address merchant,bytes32 root)` and of `Confirm(uint256 sid,bytes32 cartHash,bytes32 claimHash)`.
+def credType : Hash := 0x09e00105c4cc9ccb9d1dd716416fcdadbf3af31522e564edec8aef6de2db80ecu
+
+def confirmType : Hash := 0x800e2b12d123945af1fbb0025b679ceb109f8b141c9d2c6f2cb2727997dde65bu
+
 -- ViewAt d a n (Q-S5-2 (a), O75): a Merkle root of listings and the signature of the viewer a on (root, n). The View d m of PLAN section 3 is ViewAt d (viewer m) (id m) when Mandate is in (S5 s2).
 def ViewAt : (d : Hash) -> (a : Addr) -> (n : U256) -> Type 0 :=
   fun (d : Hash) (a : Addr) (n : U256) => (r : Hash) * Signed d a (hash3 viewType r n)
@@ -251,6 +266,9 @@ def sview : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> View d m := fun 
 -- Le a b (Q-S5-7 (a), O82): the kit has no Le, so a path from u256Le a b to flagYes. A q over the bound has no path (PATH_END in the guest).
 def Le : (a b : U256) -> Type 0 := fun (a b : U256) => Path Flag (u256Le a b) flagYes
 
+-- Lt a b (S6 s1, Q-S6-6 (a)): the strict order in the canonStep form. Lt a a has no path (PATH_END in the guest).
+def Lt : (a b : U256) -> Type 0 := fun (a b : U256) => Path Flag (flagIf (u256Eq a b) flagNo (u256Le a b)) flagYes
+
 -- Line d m s (PLAN section 3): a listing, a quantity, the provenance in the view of s, a path to the merchant of s and the bound maxQty.
 def Line : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> Type 0 :=
   fun (d : Hash) (m : Mandate) (s : Session d m) => (l : Listing) * (q : U256) * (p : Prov d (viewer m) (id m) (sview d m s) l) * (e : Path Addr (merchant l) (smerchant d m s)) * Le q (maxQty l)
@@ -279,6 +297,10 @@ def Cart : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> Type 0 :=
 def cartHash : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> Hash :=
   fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) => fold (fun (x : Line d m s) (h : Hash) => hash (lineHash d m s x) h) 0u (witness c)
 
+-- total d m s c (S6 s1, Q-S6-2 (a)): the List fold of the price times the quantity of each line, from 0u. u256Mul and u256Add trap on an overflow.
+def total : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> U256 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) => fold (fun (x : Line d m s) (acc : U256) => u256Add (u256Mul (price (lineListing d m s x)) (lineQty d m s x)) acc) 0u (witness c)
+
 -- Closed terms (S5 s2): the mandate of the viewer demoSigner with the id demoId, no policy verifier.
 def demoMandate : Mandate := mandate 0x0000000000000000000000000000000000000001 0x0000000000000000000000000000000000000002 0x544388f72794e2cde7ebedba31f94dd15438965d 0x0000000000000000000000000000000000000004 0x0000000000000000000000000000000000000005 1000u 100u 2000000000u demoId 0x0000000000000000000000000000000000000000 0u
 
@@ -304,3 +326,164 @@ def demoSid : U256 := sid demoDomain demoMandate demoSession
 def demoLineHash : Hash := lineHash demoDomain demoMandate demoSession demoLine
 
 def demoCartHash : Hash := cartHash demoDomain demoMandate demoSession demoCart
+
+-- Cred d m s (S6 s1, O87): the signature of the vault of m on the session id, the merchant word and the root of the view of s. A credential of another session has no path (PATH_END in the guest).
+def Cred : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) => Signed d (vault m) (hash4 credType (sid d m s) (addrToU256 (smerchant d m s)) (root d (viewer m) (id m) (sview d m s)))
+
+-- Confirmed d m s c k (S6 s1, O88): the signature of the viewer of m on the session id, the cart hash and the claim hash k.
+def Confirmed : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (k : Hash) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (k : Hash) => Signed d (viewer m) (hash4 confirmType (sid d m s) (cartHash d m s c) k)
+
+-- Gate d m s c spent k (Q-S6-4 (b)): the new spent amount is not more than the autoLimit of m, or the viewer of m confirmed the cart.
+def Gate : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (spent : U256) -> (k : Hash) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (spent : U256) (k : Hash) => Sum (Le (u256Add spent (total d m s c)) (autoLimit m)) (Confirmed d m s c k)
+
+-- Spend d m spent now k (PLAN section 3, S6 s1): a session, a cart, the credential, the cap bound, the expiry bound and the gate. spent is the contract state and now is the block time. PolicyOk (S9) and the used session id (O16, S7) are not in the S6 Spend.
+def Spend : (d : Hash) -> (m : Mandate) -> (spent now : U256) -> (k : Hash) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (spent now : U256) (k : Hash) => (s : Session d m) * (c : Cart d m s) * (r : Cred d m s) * (b : Le (u256Add spent (total d m s c)) (cap m)) * (t : Lt now (expiry m)) * Gate d m s c spent k
+
+def demoTotal : U256 := total demoDomain demoMandate demoSession demoCart
+
+-- The test-key mandate (S6 s1, Q-S6-3 (a)): anvil account 0 (a public test key) is the viewer and the vault. The id is 2u. The autoLimit 100u is below the cart total 450u, thus the Gate needs Confirmed. The signatures below come from `cast wallet sign --no-hash` on these digests.
+def tMandate : Mandate := mandate 0x0000000000000000000000000000000000000001 0x0000000000000000000000000000000000000002 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0x0000000000000000000000000000000000000005 1000u 100u 2000000000u 2u 0x0000000000000000000000000000000000000000 0u
+
+-- The EIP-712 digests that the test key signs: the view (the root demoRoot, the id 2u), the credential (the sid 11u, the merchant 0x..aa) and the confirmation (the sid 11u, the cart hash of demoCart, the claim hash 77u).
+def tViewDigest : Hash := hash712 demoDomain (hash3 viewType demoRoot 2u)
+
+def tCredDigest : Hash := hash712 demoDomain (hash4 credType 11u (addrToU256 0x00000000000000000000000000000000000000aa) demoRoot)
+
+def tConfirmDigest : Hash := hash712 demoDomain (hash4 confirmType 11u demoCartHash 77u)
+
+-- The signatures of the test key (S6 s1, Q-S6-3 (a)) on tViewDigest, tCredDigest and tConfirmDigest. Each signer below is the test address.
+def tViewSig : Sig := sig 28 0x001509326abd87ce721c568dfb954ba06474d78a5384d3571d42c8c8c867e25bu 0x7948bf8d80125edd9353cdd3e7ac2685a02fdd75e55bca7b769251e173b66ef4u
+
+def tCredSig : Sig := sig 27 0x7d8048c414b3f2313f6c824e5a9a90e558edd061e44958b00799b56ba6b1bce0u 0x2a04fbd3c89d290121964e94c1726fe10ee8c0e277b48542fec3b33a5309b833u
+
+def tConfirmSig : Sig := sig 28 0x78b80540c8c6d56aa320eeb4823bfccb22e1c2fc8f7e3a17fb47a413aaaf3d13u 0x7445b967ce3d94ac2d3ddef8cd780b4d41212f2fca976ba885f818f8e37f8f1eu
+
+def tViewSigner : Addr := signer demoDomain (hash3 viewType demoRoot 2u) tViewSig
+
+def tCredSigner : Addr := signer demoDomain (hash4 credType 11u (addrToU256 0x00000000000000000000000000000000000000aa) demoRoot) tCredSig
+
+def tConfirmSigner : Addr := signer demoDomain (hash4 confirmType 11u demoCartHash 77u) tConfirmSig
+
+def tView : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack demoRoot (pack tViewSig refl)
+
+def tProv : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u tView demoL0 := pack 0 (pack demoSib refl)
+
+def tProv1 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u tView demoL1 := pack 1 (pack (cons 7u (cons (listingHash demoL0) nil)) refl)
+
+def tSession : Session demoDomain tMandate := pair 11u (pair 0x00000000000000000000000000000000000000aa tView)
+
+def tLine : Line demoDomain tMandate tSession := pack demoL0 (pack 2u (pack tProv (pack refl refl)))
+
+def tLine1 : Line demoDomain tMandate tSession := pack demoL1 (pack 1u (pack tProv1 (pack refl refl)))
+
+def tCart : Cart demoDomain tMandate tSession := pack (cons tLine1 (cons tLine nil)) refl
+
+def tCred : Cred demoDomain tMandate tSession := pack tCredSig refl
+
+def tConfirmed : Confirmed demoDomain tMandate tSession tCart 77u := pack tConfirmSig refl
+
+-- tGate: the total 450u is over the autoLimit 100u, thus the Confirmed side.
+def tGate : Gate demoDomain tMandate tSession tCart 0u 77u := inr tConfirmed
+
+-- tSpend: spent 0u and now 1u. 450u is not over the cap 1000u, and 1u is before the expiry.
+def tSpend : Spend demoDomain tMandate 0u 1u 77u := pack tSession (pack tCart (pack tCred (pack refl (pack refl tGate))))
+
+-- The Le side of the Gate: a cart of one line (demoL0, the quantity 1u) has the total 100u, and 100u is not over the autoLimit 100u.
+def tLineSmall : Line demoDomain tMandate tSession := pack demoL0 (pack 1u (pack tProv (pack refl refl)))
+
+def tCartSmall : Cart demoDomain tMandate tSession := pack (cons tLineSmall nil) refl
+
+def tSmallTotal : U256 := total demoDomain tMandate tSession tCartSmall
+
+def tGateLe : Gate demoDomain tMandate tSession tCartSmall 0u 77u := inl refl
+
+-- The wire operations keep the word responses of Q-S6-1 (a). The typed
+-- show and lookup below assemble and check the signed responses.
+def showWord : (B : Type 0) -> (w : U256) -> (next : U256 -> IO B) -> IO B :=
+  fun (B : Type 0) (w : U256) (next : U256 -> IO B) => ioShow B w next
+
+def lookupWord : (B : Type 0) -> (w : U256) -> (next : U256 -> IO B) -> IO B :=
+  fun (B : Type 0) (w : U256) (next : U256 -> IO B) => ioLookup B w next
+
+-- submit B w next: the host submits the word w. The response is a receipt word.
+def submit : (B : Type 0) -> (w : U256) -> (next : U256 -> IO B) -> IO B :=
+  fun (B : Type 0) (w : U256) (next : U256 -> IO B) => ioSubmit B w next
+
+-- checkSig gives a typed Signed only after verifying the response. A bad
+-- response gives none, thus the call reverts.
+def checkSig : (R : Type 0) -> (d : Hash) -> (a : Addr) -> (g : Hash) -> (x : Sig) -> (next : Signed d a g -> IO (Option R)) -> IO (Option R) :=
+  fun (R : Type 0) (d : Hash) (a : Addr) (g : Hash) (x : Sig) (next : Signed d a g -> IO (Option R)) =>
+      elim (fun (f : Flag) => Path Flag (signedAs d g x a) f -> IO (Option R))
+        (fun (p : Path Flag (signedAs d g x a) flagYes) => next (pack x p))
+        (fun (q : Path Flag (signedAs d g x a) flagNo) => ioPure (Option R) none)
+        (signedAs d g x a) refl
+
+-- readSig asks for v, r and s as three word responses. Each request is
+-- hash digest tag, with tags 0u, 1u and 2u. Only v = 27u or 28u decodes
+-- to a valid recovery id; other words give v = 0 and fail checkSig.
+def readSig : (R : Type 0) -> (op : U256 -> (U256 -> IO (Option R)) -> IO (Option R)) -> (digest : Hash) -> (next : Sig -> IO (Option R)) -> IO (Option R) :=
+  fun (R : Type 0) (op : U256 -> (U256 -> IO (Option R)) -> IO (Option R)) (digest : Hash) (next : Sig -> IO (Option R)) =>
+    op (hash digest 0u) (fun (v : U256) =>
+      op (hash digest 1u) (fun (r : U256) =>
+        op (hash digest 2u) (fun (s : U256) =>
+          next (sig (flagIf (u256Eq v 27u) 27 (flagIf (u256Eq v 28u) 28 0)) r s))))
+
+-- show checks the viewer signature on this root and mandate id before
+-- passing View d m to next.
+def show : (R : Type 0) -> (d : Hash) -> (m : Mandate) -> (r : Hash) -> (next : View d m -> IO (Option R)) -> IO (Option R) :=
+  fun (R : Type 0) (d : Hash) (m : Mandate) (r : Hash) (next : View d m -> IO (Option R)) =>
+    readSig R (showWord (Option R)) (hash712 d (hash3 viewType r (id m)))
+      (fun (x : Sig) => checkSig R d (viewer m) (hash3 viewType r (id m)) x
+        (fun (p : Signed d (viewer m) (hash3 viewType r (id m))) => next (pack r p)))
+
+-- lookup takes the session, with no user identifier. Only a vault
+-- signature on its sid, merchant and view root reaches next as Cred.
+def lookup : (R : Type 0) -> (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (next : Cred d m s -> IO (Option R)) -> IO (Option R) :=
+  fun (R : Type 0) (d : Hash) (m : Mandate) (s : Session d m) (next : Cred d m s -> IO (Option R)) =>
+    readSig R (lookupWord (Option R)) (hash712 d (hash4 credType (sid d m s) (addrToU256 (smerchant d m s)) (root d (viewer m) (id m) (sview d m s))))
+      (fun (x : Sig) => checkSig R d (vault m) (hash4 credType (sid d m s) (addrToU256 (smerchant d m s)) (root d (viewer m) (id m) (sview d m s))) x next)
+
+-- confirm asks for the complete Sig response of Q-S6-7 (a), and checks it
+-- with the dependent Flag elim of Q-S6-8 (a). A Confirmed is a Signed.
+def confirm : (R : Type 0) -> (d : Hash) -> (a : Addr) -> (g : Hash) -> (next : Signed d a g -> IO (Option R)) -> IO (Option R) :=
+  fun (R : Type 0) (d : Hash) (a : Addr) (g : Hash) (next : Signed d a g -> IO (Option R)) =>
+    ioConfirm (Option R) (hash712 d g) (fun (x : Sig) => checkSig R d a g x next)
+
+-- The Flag elim rows (Q-S6-8 (a)): elim on a Flag takes the yes case on flagYes and the no case on flagNo.
+def flagElimYes : Nat := elim (fun (f : Flag) => Nat) 1 0 flagYes
+
+def flagElimNo : Nat := elim (fun (f : Flag) => Nat) 1 0 flagNo
+
+-- The IO entries (S6 s2 part 3, Q-S6-1 (a)): `langc run` prints each operation, and the next script line is the answer.
+-- askWord env s w: show w, look up the response, submit the word that it finds, and add the receipt to the state.
+def askWord : (env : Env) -> (s : State) -> (w : U256) -> IO (Option (Prod State (List Out))) :=
+  fun (env : Env) (s : State) (w : U256) =>
+    showWord (Option (Prod State (List Out))) w (fun (x : U256) =>
+      lookupWord (Option (Prod State (List Out))) x (fun (y : U256) =>
+        submit (Option (Prod State (List Out))) y (fun (z : U256) =>
+          ioPure (Option (Prod State (List Out))) (some (pair (makeState (cons z (sigs s))) nil)))))
+
+-- askConfirm env s: confirm the parts of tConfirmDigest with the test-key viewer. A good Sig gives some, a bad Sig gives none.
+def askConfirm : (env : Env) -> (s : State) -> IO (Option (Prod State (List Out))) :=
+  fun (env : Env) (s : State) =>
+    confirm (Prod State (List Out)) demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 (hash4 confirmType 11u demoCartHash 77u)
+      (fun (c : Signed demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 (hash4 confirmType 11u demoCartHash 77u)) =>
+        ioPure (Option (Prod State (List Out))) (some (pair s nil)))
+
+-- The typed IO rows: the viewer authenticates the requested root, and
+-- the vault authenticates the requested session. Bad responses revert.
+def askView : (env : Env) -> (s : State) -> (r : Hash) -> IO (Option (Prod State (List Out))) :=
+  fun (env : Env) (s : State) (r : Hash) =>
+    show (Prod State (List Out)) demoDomain tMandate r
+      (fun (v : View demoDomain tMandate) =>
+        ioPure (Option (Prod State (List Out))) (some (pair (makeState (cons (root demoDomain (viewer tMandate) (id tMandate) v) (sigs s))) nil)))
+
+def askLookup : (env : Env) -> (s : State) -> (n : U256) -> IO (Option (Prod State (List Out))) :=
+  fun (env : Env) (s : State) (n : U256) =>
+    lookup (Prod State (List Out)) demoDomain tMandate (pair n (pair 0x00000000000000000000000000000000000000aa tView))
+      (fun (c : Cred demoDomain tMandate (pair n (pair 0x00000000000000000000000000000000000000aa tView))) =>
+        ioPure (Option (Prod State (List Out))) (some (pair (makeState (cons n (sigs s))) nil)))

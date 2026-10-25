@@ -62,6 +62,7 @@ typedef enum {
   OP_FLAG_IF,
   OP_U256_ADD,
   OP_U256_SUB,
+  OP_U256_MUL,
   OP_U256_LE,
   OP_U256_EQ,
   OP_TO_U256,
@@ -252,6 +253,7 @@ typedef struct {
      (S4 item 13): index 0 is the field before this one. */
   const Core *type;
   int recursive;      /* the field type is the family itself */
+  int arrow;          /* the field type is D -> the family, D closed data (S6) */
   int dependent;      /* the field type uses an earlier point field */
   int over_recursive; /* the field type uses an earlier recursive field */
   /* A path field `Path F x y` (S4 item 14): x and y are the earlier

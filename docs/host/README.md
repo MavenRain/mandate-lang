@@ -48,7 +48,7 @@ Prelude names:
 |------|------|--------|
 | `u256Add` | `U256 -> U256 -> U256` | The sum. An overflow past 2^256 - 1 traps. |
 | `u256Sub` | `U256 -> U256 -> U256` | The difference. The result stops at 0. |
-| `u256Mul` | `U256 -> U256 -> U256` | The product. An overflow traps. |
+| `u256Mul` | `U256 -> U256 -> U256` | The product. An overflow past 2^256 - 1 traps. |
 | `u256Div` | `U256 -> U256 -> U256` | The quotient, rounded down. Division by 0 traps. |
 | `u256Le` | `U256 -> U256 -> Flag` | `flagYes` when the first is less than or equal to the second. |
 | `u256Eq` | `U256 -> U256 -> Flag` | `flagYes` when the two are equal. |
@@ -129,7 +129,7 @@ NOW CALLER NAME ARGS...
 - Each call starts with the full fuel limit.
 - The start state also gets the full fuel limit. A NUL byte in a script line is a `RUN_SCRIPT` error.
 
-The output has one line for each call. The calls have the numbers 1, 2, 3 and so on. Comments and blank lines do not get a number. `test/run/basic.script` gives this output (`test/run/basic.out`):
+The output has one line for each call. An IO call (S6) also has one line for each operation, before the line of its result. The calls have the numbers 1, 2, 3 and so on. Comments and blank lines do not get a number. `test/run/basic.script` gives this output (`test/run/basic.out`):
 
 ```
 1 deposit ok
@@ -148,7 +148,16 @@ state makeState 0x00000000000000000000000000000000000000aa 3u 2u 105
 - `N NAME revert`: the entry gave `none`. The state does not change.
 - `N NAME trap`: the call has a trap, for example an overflow or a division by 0. A trap is a revert, as on the EVM: the state does not change and the run continues. The run does not write an `EVAL_OVERFLOW` line for a trap.
 - `N NAME = VALUE`: the view gave `VALUE`. A view does not change the state.
+- `N NAME OP WORD` (S6): the IO entry NAME asks for the operation OP (`show`, `lookup`, `confirm` or `submit`) on WORD. An IO entry gives `IO (Option (Prod State (List Out)))`. The next script line that is not blank and not a comment is the answer `OP WORDS`: the same OP and one U256 word, or `confirm V R S` (a `Sig`: the Nat V and the U256 words R and S). The run applies the continuation to the answer and goes on. At `ioPure` the run writes `ok`, `revert` or `trap` as for an entry.
 - After the last call, the line `state` and the normal form of the final state.
+
+In `examples/precompile.lang`, `show` passes a verified `View d m` and
+`lookup` passes a verified `Cred d m s` to their continuations. They use
+three word operations for the signature fields v, r and s. For an
+EIP-712 digest g, the requests are `hash g 0u`, `hash g 1u` and `hash g 2u`,
+in that order. The v response must be 27u or 28u. Invalid signatures
+revert. The helpers `showWord` and `lookupWord` expose the raw word
+transport, as in the `askWord` protocol example.
 
 The exit codes of `langc run`:
 
@@ -156,6 +165,7 @@ The exit codes of `langc run`:
 - 1: a check refusal or a script error. The run stops at the first bad line. The output lines of the calls before it stay on stdout.
   - `RUN_INIT`: the program has no state, it has no `def init : State`, or `init` has a trap.
   - `RUN_SCRIPT`: a line has fewer than 3 words, a bad `NOW` or `CALLER`, or a NUL byte. The message gives `SCRIPT:LINE`.
+  - `RUN_ANSWER` (S6): an answer has a different OP or a wrong word count, or the script ends before the answer to an open operation.
   - `EVAL_ENTRY`: `NAME` is not an entry or a view.
   - `EVAL_FUEL`, `EVAL_DEPTH` and `EVAL_PRINT` stop the run, as in `langc eval`.
 - 2: a usage error, an `IO` error for the script, or `EVAL_ARGS` (a bad argument or an incorrect number of arguments), as in `langc eval`.

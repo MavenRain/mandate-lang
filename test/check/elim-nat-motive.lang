@@ -1,0 +1,1 @@
+def bad : Nat := elim (fun (n : Nat) => Nat) 1 0 3

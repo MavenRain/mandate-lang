@@ -185,6 +185,7 @@ static const Builtin BUILTINS[] = {
   {"natLe", 2, RULE_NAT2, OP_NAT_LE, OP_FLAG, 0, VIS_INTERNAL},
   {"u256Add", 2, RULE_U256_2, OP_U256_ADD, OP_U256, 0, VIS_INTERNAL},
   {"u256Sub", 2, RULE_U256_2, OP_U256_SUB, OP_U256, 0, VIS_INTERNAL},
+  {"u256Mul", 2, RULE_U256_2, OP_U256_MUL, OP_U256, 0, VIS_INTERNAL},
   {"u256Le", 2, RULE_U256_2, OP_U256_LE, OP_FLAG, 0, VIS_INTERNAL},
   {"u256Eq", 2, RULE_U256_2, OP_U256_EQ, OP_FLAG, 0, VIS_INTERNAL},
   {"toU256", 1, RULE_TO_U256, OP_TO_U256, OP_U256, 0, VIS_INTERNAL},
@@ -842,12 +843,14 @@ static const Value *elim_case(Checker *c, const Value *pv, const Value *st, uint
   const Value *x = val_var(c->m, c->level);
   if (val_is(st, OP_UNIT))
     return apply_value(c->m, pv, tyop(c, OP_UNIT_VAL, 0, NULL, NULL, NULL));
+  if (val_is(st, OP_FLAG))
+    return apply_value(c->m, pv, tyop(c, i == 0u ? OP_FLAG_YES : OP_FLAG_NO, 0, NULL, NULL, NULL));
   return here(c, core_bind(c, CORE_PI, i == 0u ? "a" : "b", quote_value(c->m, c->level, st->args[i]),
                            quote_value(c->m, c->level + 1u, apply_value(c->m, pv, tyop(c, i == 0u ? OP_INL : OP_INR, 1, x, NULL, NULL)))));
 }
 
 /* A printed motive has no binder annotation. Its domain can instead come
-   from the scrutinee at the Unit or Sum argument position. */
+   from the scrutinee at the Unit, Sum or Flag argument position. */
 static const Value *elim_domain(Checker *c, const Term *const *args, uint32_t argc) {
   const Value *dom = lam_domain(c, args[0]);
   uint32_t i;
@@ -860,7 +863,7 @@ static const Value *elim_domain(Checker *c, const Term *const *args, uint32_t ar
       return dom;
   }
   for (i = 2u; i < argc && i < 4u; i++) {
-    if (try_infer(c, args[i], &dom) != NULL && val_is(dom, i == 2u ? OP_UNIT : OP_SUM))
+    if (try_infer(c, args[i], &dom) != NULL && (val_is(dom, i == 2u ? OP_UNIT : OP_SUM) || (i == 3u && val_is(dom, OP_FLAG))))
       return dom;
   }
   return NULL;
@@ -920,9 +923,8 @@ static const Core *elim_on_family(Call *k, const Core *motive, const Value *pt, 
    (two cases) and Unit (one case), with the motive P : X -> Type k and the
    type P x. A domain family outside a block goes to elim_on_family (S7
    B1, O21). Nat, List or a Path has no elim (no K). */
-static const Core *rule_elim(Call *k) {
+static const Core *elim_with_domain(Call *k, const Value *st) {
   Checker *c = k->c;
-  const Value *st = elim_domain(c, k->args, k->argc);
   const Value *pt = NULL;
   const Value *pv;
   const Core *cores[4] = {NULL, NULL, NULL, NULL};
@@ -956,9 +958,10 @@ static const Core *rule_elim(Call *k) {
     return NULL;
   if (val_is(st, OP_FAMILY) && c->m->families[st->inst].block_count == 1u)
     return elim_on_family(k, cores[0], pt, st, d);
-  if (d != 0u || (!val_is(st, OP_SUM) && !val_is(st, OP_UNIT)))
-    return nul(FAIL(c, "TYPE_MISMATCH", "elim needs a motive on Sum A B, Unit or a domain family outside a block, found a motive of type %s", show(c, pt)));
-  want = val_is(st, OP_SUM) ? 2u : 1u;
+  if (d != 0u || (!val_is(st, OP_SUM) && !val_is(st, OP_UNIT) && !val_is(st, OP_FLAG)))
+    return nul(FAIL(c, "TYPE_MISMATCH", "elim needs a motive on Sum A B, Unit, Flag or a domain family outside a block, found a motive of type %s", show(c, pt)));
+  /* Flag (Q-S6-8 (a)): the yes case, then the no case. */
+  want = val_is(st, OP_UNIT) ? 1u : 2u;
   if (k->argc < want + 2u)
     return nul(FAIL(c, "TYPE_MISMATCH", "elim on %s needs a motive, %u cases and a scrutinee", show(c, st), want));
   s = check(c, k->args[want + 1u], st);
@@ -973,6 +976,28 @@ static const Core *rule_elim(Call *k) {
   k->type = apply_value(c->m, pv, here(c, s));
   k->used = want + 2u;
   return core_op(c, OP_ELIM, want, 0, cores, want + 2u);
+}
+
+static const Core *rule_elim(Call *k) {
+  Checker *c = k->c;
+  const Value *st = elim_domain(c, k->args, k->argc);
+  const Value *flag = NULL;
+  /* A Flag case can itself be Unit or a one-constructor family. Try the
+     fourth argument as the Flag scrutinee before taking a case as the
+     scrutinee of a shorter elim. If that fails, the shorter elim may
+     instead return a function applied to this Flag. */
+  if (k->args[0]->kind == TERM_LAM && k->args[0]->left == NULL &&
+      !val_is(st, OP_FLAG) && k->argc > 3u &&
+      try_infer(c, k->args[3], &flag) != NULL && val_is(flag, OP_FLAG)) {
+    Diag saved = *c->m->diag;
+    Call call = *k;
+    const Core *out = elim_with_domain(k, flag);
+    if (out != NULL)
+      return out;
+    *c->m->diag = saved;
+    *k = call;
+  }
+  return elim_with_domain(k, st);
 }
 
 static const Core *rule_pure(Call *k) {
@@ -3011,8 +3036,9 @@ static int own_family(const Machine *m, uint32_t fam, const Core *t, uint32_t sh
 /* A family with a type parameter is a type constructor, so it must be a
    cell signature (S3, rule R1): only type parameters, no and block, each
    type parameter the one field of exactly one generator constructor, and
-   every other point field closed data, the family at its own parameters
-   or a path in it. REFUSE_CELL comes before DOMAIN_FAMILY. */
+   every other point field closed data, the family at its own parameters,
+   a function from closed data to the family (S6, Q-S6-1 (a)) or a path
+   in it. REFUSE_CELL comes before DOMAIN_FAMILY. */
 typedef struct CellSeen CellSeen;
 struct CellSeen {
   uint32_t family;
@@ -3114,11 +3140,11 @@ static int cell_field(Checker *c, uint32_t fam, const FieldInfo *out, uint32_t e
   const Core *t = out->type;
   if (cell_param(f, t, earlier) < f->param_count)
     return field_count == 1u ? 1 : FAIL(c, "REFUSE_CELL", "%s is not a cell signature: the field %s has a type parameter as its type, so it must be the one field of its constructor (rule R1)", f->name, out->name);
-  if (own_family(c->m, fam, t, earlier) || (t->kind == CORE_PATHP && own_family(c->m, fam, t->b, earlier + 1u)))
+  if (out->arrow || own_family(c->m, fam, t, earlier) || (t->kind == CORE_PATHP && own_family(c->m, fam, t->b, earlier + 1u)))
     return 1;
   if (c->self_uses == 0u && cell_closed(t, 0u))
     return 1;
-  return FAIL(c, "REFUSE_CELL", "%s is not a cell signature: the field %s must be a type parameter, closed data, %s at its own parameters or a path in %s (rule R1)", f->name, out->name, f->name, f->name);
+  return FAIL(c, "REFUSE_CELL", "%s is not a cell signature: the field %s must be a type parameter, closed data, %s at its own parameters (or a function from closed data to it) or a path in %s (rule R1)", f->name, out->name, f->name, f->name);
 }
 
 /* Each type parameter has exactly one generator (S3, open point QA1:
@@ -3163,7 +3189,13 @@ static int check_field(Checker *c, uint32_t fam, const Field *field, FieldInfo *
   out->type = t;
   /* A path type over earlier recursive fields names the family, but it is
      a path field, not a recursive field (S4 item 14). */
-  out->recursive = c->self_uses > 0u && !(t->kind == CORE_PATHP && c->field_rec);
+  /* A strictly positive field `D -> F params` of a cell signature (S6,
+     Q-S6-1 (a)): D is closed data, with no parameter and no use of F. It
+     is not a recursive field: the fold gives it as it is, with no
+     induction hypothesis. */
+  out->arrow = c->self_uses == 1u && t->kind == CORE_PI && has_type_param(c->m, &c->m->families[fam])
+    && own_family(c->m, fam, t->b, earlier + 1u) && cell_closed(t->a, 0u) && !cell_type_argument(c->m, t->a);
+  out->recursive = c->self_uses > 0u && !out->arrow && !(t->kind == CORE_PATHP && c->field_rec);
   out->dependent = c->field_dep;
   out->over_recursive = c->field_rec;
   out->history = field->history;
@@ -3367,7 +3399,7 @@ static int check_ctor(Checker *c, uint32_t fam, const Ctor *ctor, uint32_t slot)
       return 0;
     if (!interval) {
       path_field(m, fam, fields, (uint32_t)points);
-      if (c->self_uses > 0u && !fields[j].recursive && !fields[j].path)
+      if (c->self_uses > 0u && !fields[j].recursive && !fields[j].path && !fields[j].arrow)
         return FAIL(c, "DOMAIN_FAMILY", "the field %s uses a family of its block outside a recursive field or a path over earlier recursive fields", fields[j].name);
     }
     /* A later field type can use this field (S4 item 13). */
@@ -3434,6 +3466,7 @@ static int check_event(Checker *c, uint32_t fam, const Decl *d) {
     fields[j].name = ctor->fields[j].name;
     fields[j].type = t;
     fields[j].recursive = 0;
+    fields[j].arrow = 0;
     fields[j].dependent = 0;
     fields[j].over_recursive = 0;
     fields[j].path = 0;
@@ -4704,7 +4737,7 @@ int eval_command(Machine *m, const char *name, char *const *args, int arg_count,
 }
 
 /* The role of a definition in a run (slice K3b, D-3), found by its type. */
-typedef enum { ROLE_HELPER, ROLE_ENTRY, ROLE_VIEW } Role;
+typedef enum { ROLE_HELPER, ROLE_ENTRY, ROLE_VIEW, ROLE_IO } Role;
 
 typedef struct {
   uint32_t param_count;
@@ -4712,14 +4745,18 @@ typedef struct {
 } RunCall;
 
 /* A run: the script path, the prelude families, the calls so far, the
-   current state and a print buffer of PRINT_MAX bytes. */
+   current state and a print buffer of PRINT_MAX bytes. An IO call (S6 s2
+   part 3) keeps its open operation until the next script line answers it. */
 typedef struct {
   const char *path;
   uint32_t env;
   uint32_t out;
+  uint32_t io;
   uint32_t calls;
   const Value *state;
   char *buf;
+  const Value *open;     /* the IO operation that waits for an answer, or NULL */
+  const char *open_name; /* the entry of the open operation */
 } Run;
 
 static uint32_t find_family(const Machine *m, const char *name) {
@@ -4747,6 +4784,7 @@ static Role role_of(Machine *m, const Run *r, const Value *type, RunCall *call) 
   const Value *t = type;
   const Value *p;
   ArgType kind;
+  int io;
   memset(call, 0, sizeof *call);
   if (t == NULL || t->kind != VAL_PI || !is_family(t->dom, r->env))
     return ROLE_HELPER;
@@ -4761,9 +4799,11 @@ static Role role_of(Machine *m, const Run *r, const Value *type, RunCall *call) 
   }
   if (arg_type(t, &kind))
     return ROLE_VIEW;
+  io = r->io != NO_FAMILY && is_family(t, r->io) && t->argc == 1u;
+  t = io ? t->args[0] : t;
   p = val_is(t, OP_OPTION) ? t->args[0] : NULL;
   if (val_is(p, OP_PROD) && is_family(p->args[0], m->state_family) && val_is(p->args[1], OP_LIST) && is_family(p->args[1]->args[0], r->out))
-    return ROLE_ENTRY;
+    return io ? ROLE_IO : ROLE_ENTRY;
   return ROLE_HELPER;
 }
 
@@ -4802,6 +4842,9 @@ static const Value *make_env(Machine *m, const Run *r, uint64_t now, const U256 
              ? NULL
              : val_op(m, VAL_OP, OP_CTOR, m->families[r->env].first_ctor, 0, args, 4u);
 }
+
+static int call_result(Machine *m, Run *r, uint32_t line, const char *name, Role role, const Value *v, FILE *out);
+static int io_step(Machine *m, Run *r, uint32_t line, const char *name, const Value *v, FILE *out);
 
 /* One call `NOW CALLER NAME ARGS...` (D-6 to D-8). A trap is a revert: the
    state does not change. Returns 0, 1, or 2 after EVAL_ARGS. */
@@ -4843,6 +4886,12 @@ static int run_call(Machine *m, Run *r, uint32_t line, char *const *word, uint32
   if (v == NULL)
     return 1;
   r->calls++;
+  return role == ROLE_IO ? io_step(m, r, line, name, v, out) : call_result(m, r, line, name, role, v, out);
+}
+
+/* The result V of the call NAME at LINE: a trap, the value of a view, or the
+   result of an entry (revert, or ok and the Out lines). */
+static int call_result(Machine *m, Run *r, uint32_t line, const char *name, Role role, const Value *v, FILE *out) {
   if (has_trap(v)) {
     fprintf(out, "%u %s trap\n", r->calls, name);
     return 0;
@@ -4868,6 +4917,75 @@ static int run_call(Machine *m, Run *r, uint32_t line, char *const *word, uint32
     fprintf(out, "  %s%s\n", val_is(o, OP_CTOR) && o->inst < m->ctor_count && m->ctors[o->inst].event ? "event " : "", r->buf);
   }
   return 0;
+}
+
+/* The IO operations of a run (S6 s2 part 3, Q-S6-1 (a)): the IO
+   constructor, the operation word of the script and the answer word count. */
+enum { IO_OP_COUNT = 4, IO_PURE = 4, IO_NOT = 5 };
+static const struct {
+  const char *ctor;
+  const char *op;
+  uint32_t words;
+} io_ops[IO_OP_COUNT] = {{"ioShow", "show", 1u}, {"ioLookup", "lookup", 1u}, {"ioConfirm", "confirm", 3u}, {"ioSubmit", "submit", 1u}};
+
+/* The io_ops index of the IO value V, IO_PURE for ioPure, or IO_NOT. */
+static uint32_t io_op_of(const Machine *m, const Run *r, const Value *v) {
+  uint32_t k = 0;
+  if (!val_is(v, OP_CTOR) || v->inst >= m->ctor_count || m->ctors[v->inst].family != r->io)
+    return IO_NOT;
+  if (strcmp(m->ctors[v->inst].name, "ioPure") == 0)
+    return v->argc == 2u ? IO_PURE : IO_NOT;
+  while (k < IO_OP_COUNT && strcmp(m->ctors[v->inst].name, io_ops[k].ctor) != 0)
+    k++;
+  return k < IO_OP_COUNT && v->argc == 3u ? k : IO_NOT;
+}
+
+/* One step of the IO call NAME (S6 s2 part 3, Q-S6-1 (a)). At ioPure the
+   field is the entry result. At an operation the run prints `K NAME OP
+   WORD`, and the next script line must answer it. */
+static int io_step(Machine *m, Run *r, uint32_t line, const char *name, const Value *v, FILE *out) {
+  uint32_t k = io_op_of(m, r, v);
+  r->open = NULL;
+  if (has_trap(v) || k == IO_PURE)
+    return call_result(m, r, line, name, ROLE_ENTRY, k == IO_PURE ? v->args[1] : v, out);
+  if (k == IO_NOT)
+    return diag_fail(m->diag, "EVAL_ENTRY", name, "%s:%u: the IO entry did not compute an operation or ioPure", r->path, line) + 1;
+  if (!print_value(m, v->args[1], r->buf))
+    return 1;
+  fprintf(out, "%u %s %s %s\n", r->calls, name, io_ops[k].op, r->buf);
+  r->open = v;
+  r->open_name = name;
+  return 0;
+}
+
+/* The answer `OP WORDS` at LINE to the open operation: the same OP and one
+   U256 word, or `confirm V R S` (a Sig: pair V (pair R S), V a Nat). The run
+   applies the next field of the operation to the answer. */
+static int run_answer(Machine *m, Run *r, uint32_t line, char *const *word, uint32_t count, FILE *out) {
+  const Value *v = r->open;
+  const Value *a[3] = {NULL, NULL, NULL};
+  const Value *x;
+  uint32_t k = io_op_of(m, r, v);
+  uint32_t i;
+  m->fuel = EVAL_FUEL_STEPS;
+  m->def = r->open_name;
+  if (k >= IO_OP_COUNT)
+    return diag_fail(m->diag, "RUN_ANSWER", r->open_name, "%s:%u: no operation waits for an answer", r->path, line) + 1;
+  if (strcmp(word[0], io_ops[k].op) != 0)
+    return diag_fail(m->diag, "RUN_ANSWER", r->open_name, "%s:%u: the open operation is %s, found '%s'", r->path, line, io_ops[k].op, word[0]) + 1;
+  if (count != io_ops[k].words + 1u)
+    return diag_fail(m->diag, "RUN_ANSWER", r->open_name, "%s:%u: the answer to %s takes %u words, found %u", r->path, line, io_ops[k].op, io_ops[k].words, count - 1u) + 1;
+  for (i = 0; i < io_ops[k].words; i++) {
+    a[i] = entry_arg(m, word[i + 1u], (io_ops[k].words == 3u && i == 0u) ? ARG_TYPE_NAT : ARG_TYPE_U256);
+    if (a[i] == NULL)
+      return strcmp(m->diag->code != NULL ? m->diag->code : "", "EVAL_ARGS") == 0 ? 2 : 1;
+  }
+  x = io_ops[k].words == 3u ? val_make(m, OP_PAIR, 0, 2u, a[1], a[2], NULL) : a[0];
+  x = (x != NULL && io_ops[k].words == 3u) ? val_make(m, OP_PAIR, 0, 2u, a[0], x, NULL) : x;
+  v = x == NULL ? NULL : apply_value(m, v->args[2], x);
+  if (v == NULL)
+    return 1;
+  return io_step(m, r, line, r->open_name, v, out);
 }
 
 /* Splits LINE at spaces and tabs. Returns the word count; keeps CAP words. */
@@ -4899,6 +5017,7 @@ int run_command(Machine *m, const char *path, const char *text, size_t len, FILE
   r.path = path;
   r.env = find_family(m, "Env");
   r.out = find_family(m, "Out");
+  r.io = find_family(m, "IO");
   r.buf = arena_alloc(m->arena, PRINT_MAX);
   m->def = "init";
   if (!m->has_state || init == NO_DEF || !is_family(m->defs[init].type, m->state_family) || r.env == NO_FAMILY)
@@ -4927,11 +5046,13 @@ int run_command(Machine *m, const char *path, const char *text, size_t len, FILE
     line++;
     count = split_words(copy, word, ENTRY_PARAMS_MAX + 3u);
     if (count != 0u && strncmp(word[0], "--", 2) != 0)
-      status = run_call(m, &r, line, word, count, out);
+      status = r.open != NULL ? run_answer(m, &r, line, word, count, out) : run_call(m, &r, line, word, count, out);
     pos = end + 1u;
   }
   if (status != 0)
     return status;
+  if (r.open != NULL)
+    return diag_fail(m->diag, "RUN_ANSWER", r.open_name, "%s: the script ends before the answer to call %u", r.path, r.calls) + 1;
   m->def = NULL;
   if (!print_value(m, r.state, r.buf))
     return 1;

@@ -95,3 +95,10 @@ line-wrong-merchant.lang
 line-over-max.lang
 cart-not-canonical.lang
 cart-same-listing.lang
+cred-other-session.lang
+confirm-wrong-claim.lang
+spend-over-cap.lang
+spend-after-expiry.lang
+flag-elim-case.lang
+elim-nat-motive.lang
+confirm-no-case.lang

@@ -99,6 +99,29 @@ questions):
   Q-S5-7 (O82).
 - 2026-10-25 (S5 close, claude7): S5 DONE. Gate EXIT 0 with the counts
   of the S5 row (section 9).
+- 2026-10-25 (S6 kickoff, claude7): the USER accepted the S5 commit
+  0fb3760 as the base (O85). The USER RULED Q-S6-1 (a), Q-S6-2 (a),
+  Q-S6-3 (a) and Q-S6-4 (b) (section 11).
+- 2026-10-25 (S6 s1, claude7): the USER RULED Q-S6-5 (a) and Q-S6-6 (a)
+  (section 11). s1 DONE, UNSTAGED (O90 to O94).
+- 2026-10-25 (S6 s2 part 1, claude7): the R1 field rule (Q-S6-1 (a)) and
+  `IO` in domain/domain.lang, UNSTAGED (O95 to O97). Q-S6-7 OPEN.
+- 2026-10-25 (S6 s2 part 2, claude7): the USER RULED Q-S6-7 (a): the
+  field `confirmNext`
+  takes the closed data `Prod Nat (Prod U256 U256)`. Q-S6-8 RULED (a):
+  `elim` takes a motive on Flag; `confirm` uses the inspect form, and the
+  no case reverts. s2 part 2 DONE, UNSTAGED (O98 to O101).
+- 2026-10-25 (S6 s2 part 3, claude7): the answer form of `langc run`
+  (Q-S6-1 (a)): an IO entry prints `K NAME OP WORD`, and the next script
+  line answers it. The new code RUN_ANSWER. No new question. s2 part 3
+  DONE, UNSTAGED (O102 to O105).
+- 2026-10-25 (S6 close, claude7): 8 of 8 mutants KILLED (O106). M1 (the
+  OP check of run_answer) lived first; the USER RULED (a): a new
+  RUN_ANSWER row answers each operation after the wrong OP. Run refusals
+  13 to 14. The host README run output text. S6 DONE, STAGED (O107).
+- 2026-10-25 (S6 staged review): fixed the printed Flag motive ambiguity
+  (O108) and added the typed viewer and credential responses required by
+  4.3 and 4.6 (O109). The word transport of Q-S6-1 (a) is retained.
 
 ## 2. The reading of R1
 
@@ -514,7 +537,7 @@ call (S9).
 | S3 | R1 in this repo: `REFUSE_CELL`, the former matrix as CM and CC rows, `Bag` with `swap` | DONE (2026-10-24): base 9a1fc6c, tree df9ac214 (O57); `REFUSE_CELL` HAVE (src/front/check.c, test/fronttool.c); formers/FORMERS.md section 5 has the CM row (`Bag`, `FreeMon`) and the CC row (`Stream`); `Bag` HAVE, `bagComm` is the swap (O59); new check row test/check/cart-cons-swap.lang REFUSE_DATA (O61); gate EXIT 0: examples 41, parse refusals 19, check refusals 169 (168 + 1), kit-only refusals 19, evals 136, run refusals 10, builds 3, lower refusals 15, checks 32; O57 to O61; Q-S3-1 and Q-S3-2 OPEN; Q-S2-1 to Q-S2-4 stay OPEN |
 | S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | DONE (2026-10-24): base 68efac0. `Env` `chainid` and `self` (CHAINID, ADDRESS); `hash712`, `hash3` and `hash4` (Q-S4-1 (a), O67); `Hash`, `Sig`, `signer` and `signedAs` (examples/precompile.lang); `mailHash` gives the struct hash of the EIP-712 Mail example by `hash3` and `hash4`; formers/FORMERS.md F16 to F19 and the Fin kit note (Q-S3-1 (a); the bridge-lang section 5 has no F16 to F19 rows); gate EXIT 0: evals 144, precompile 19 steps; O61 stays OPEN; O62 to O67 |
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | DONE 2026-10-25 (s1 kickoff 2026-10-24; s1 DONE 2026-10-24 without `merkle2V`, gate counts examples 41, check refusals 171, evals 148, precompile 21 steps, the other S4 counts the same; Q-S5-5 RULED (b); s1b DONE 2026-10-25: `flagIf` is the word select (O79), `side` lowers, 3 `merkle2V` rows (O80), gate counts precompile 24 steps, the other s1 counts the same; s2 DONE 2026-10-25: `Mandate`, `View`, `Session`, `Line`, `Cart`, `cartHash` and 4 guest refusals (PATH_END), Q-S5-6 RULED (a) (the sorted `List`), Q-S5-7 RULED (a) (`def Le`), gate counts check refusals 175, evals 154, the other s1b counts the same, O81 to O84): base 65527a8; three sessions: s1 `Listing`, `listingHash`, `merkle`, `Prov`, `Signed`, `View`; s2 `Line`, `Cart`, `cartHash`, `Mandate`; the close; Q-S5-1 to Q-S5-4 RULED (a); O68 to O84; close DONE 2026-10-25: gate EXIT 0 (mandate-lang-work/S5-close-gate.log), the s2 counts: examples 41, parse refusals 19, check refusals 175, kit-only refusals 19, evals 154, runs 6, run refusals 10, asmtool 8 of 8, builds 3, lower refusals 15, checks 32, dispatch 20, evm steps 43, precompile 24 steps, mock 13 rows, diff 15 rows, emit 24 |
-| S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | PLANNED |
+| S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | PLANNED |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | PLANNED |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | PLANNED |
@@ -866,6 +889,181 @@ call (S9).
   mandate-lang-work/S5-s2-gate.log EXIT 0. O66: s2 adds no kit op; the
   new guest defs use `pack`, `witness`, `payload`, `fold`, `flagIf`,
   `u256Le`, `u256Eq`, `natAdd`, `natEq` and `hash`.
+- O85 (S6 kickoff): the USER commit 0fb3760 (subject `Add the S5
+  mandate, provenance, view, line and canonical cart`, parent 65527a8)
+  has the tree 26b848f1, not the staged tree 41e518be. The one change: the
+  last blank line of this plan is not in the commit. The USER accepted
+  0fb3760 as the S5 base. Gate mandate-lang-work/S6-step0-gate.log EXIT
+  0, the same 48 sorted lines as the S5 close log.
+- O86 (S6 kickoff, probe a): a program cannot declare a family
+  (REFUSE_DATA), so `IO` goes in domain/domain.lang. In a scratch copy of
+  the repo, the first-order `io3Op (o : Op) (k : IO3 A)` is admitted
+  (probe a3). The field `Op -> IO1 A` gives REFUSE_CELL (probe a1): a field
+  that holds the family must be the family at its own parameters. Probe
+  a2 (`Resp o -> IO2 A`) did not run, because make kept the a1 binary (the
+  mtime trap); its field has the form of a1. domain/domain.lang cannot
+  name a guest type such as `Cred s` or `View d m`. R1 admits a field into
+  closed data (OrbitN has `Pos onSize -> Sum Unit Unit`). Q-S6-1 RULED (a).
+- O87 (S6 kickoff, probe b): `Cred d m s` is `Signed d (vault m) (hash4
+  credType (sid d m s) (addrToU256 (smerchant d m s)) (root d (viewer m)
+  (id m) (sview d m s)))`. The S5 trick holds: with demoSig the vault is
+  the recovered address 0xb795772b56ccec30569ccbabb05d58e77c652241, and
+  `pack demoSig refl` checks. The same credential at sid 10u gives
+  PATH_END (WRONG_SESSION on the chain). The probe `credType` is a
+  placeholder word. The probes use `langc --kit`, because
+  examples/precompile.lang has `State` and `Nat` (REFUSE_KIT in the guest
+  mode).
+- O88 (S6 kickoff, probe c): `Confirmed d m s c k` is `Signed d (viewer
+  m) (hash4 confirmType (sid d m s) (cartHash d m s c) k)`. A Flag-select
+  `Gate` (one Sig and a path of `flagIf (u256Le (u256Add spent total)
+  (autoLimit m)) flagYes (signedAs ...)` to `flagYes`) checks below the
+  limit with any Sig, and gives PATH_END above it (demoMandate, autoLimit
+  100u). The kit has `u256Add`, `u256Sub`, `u256Eq` and `u256Le`, but no
+  `u256Mul`, so the probe `total` adds only the prices (350u, not 450u). A
+  closed `Confirmed` needs a viewer key: the viewer of demoView has no
+  known key, and one address cannot sign two digests by the S5 trick.
+  Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED.
+- O89 (S6 kickoff, probe d): `langc run PROG SCRIPT` reads contract calls
+  `NOW CALLER NAME ARGS` (test/run/basic.script). The .out file has a line
+  `K NAME ok`, `revert` or `trap` for each call, the `pay`, `pull` and
+  `event` lines of the call, and a last `state` line. No script form
+  answers an IO operation. S6 s2 adds one (Q-S6-1 (a)). The probe files
+  are mandate-lang-work/S6-probe-*.lang, not in the repo.
+- O90 (S6 s1, Q-S6-2 (a)): `u256Mul` is a kit op: src/front/core.h,
+  src/front/check.c, src/front/eval.c (u256_mul, a trap on an overflow)
+  and src/lower.c (IR_OP_MUL_TRAP, which evm.c and test/emittool.c have
+  from before). docs/host/README.md has the row. formers/FORMERS.md has
+  no kit word table, thus it has no note. Rows: the evals mulGood and
+  mulZero (O94), and 3 precompile steps of mulV. A view trap
+  on the chain gives the result `trap`, not `revert`.
+- O91 (S6 s1): examples/precompile.lang adds `Lt` (Q-S6-6 (a)), `total`,
+  `credType` and `confirmType` (`cast keccak` of the type strings),
+  `Cred`, `Confirmed`, `Gate` (a `Sum` with `inl` and `inr`, Q-S6-4 (b))
+  and `Spend d m spent now k`. The eval of demoTotal is 450u.
+- O92 (S6 s1, Q-S6-3 (a)): tMandate has anvil account 0 as the viewer
+  and the vault (id 2u, autoLimit 100u). The signatures come from `cast
+  wallet sign --no-hash` on tViewDigest, tCredDigest and tConfirmDigest,
+  and each signer evals to the test address. tGate is the Confirmed
+  side, tGateLe is the Le side (tCartSmall, total 100u), and tSpend
+  checks. test/check has 4 new PATH_END rows (cred-other-session,
+  confirm-wrong-claim, spend-over-cap, spend-after-expiry). Each repeats
+  the part of examples/precompile.lang from `Hash` to the end without
+  the views on State or Env (about 21 kB).
+- O93 (S6 s1): `PolicyOk` is not in the S6 `Spend` (S9 adds it with
+  `prove`, Q-S6-5 (a)). The used session id (O16) is a chain check
+  (S7). The claim hash k is an argument of `Gate` and `Spend`.
+- O94 (S6 s1): `langc eval` of the closed mulOver prints `trap` with
+  exit 0 and no EVAL_OVERFLOW line, thus it has no eval row (the gate row
+  of a trap needs that line). test/check/pruned-op.lang named u256Mul.
+  It names u256Div now (not a kit op) and stays NAME_UNKNOWN.
+- O95 (S6 s2, Q-S6-1 (a)): src/front/check.c admits a strictly positive
+  field `D -> F params` in a cell signature. D is closed data: no
+  parameter, no earlier field, no universe, and F does not occur in D
+  (`self_uses` is 1). FieldInfo has the flag `arrow` (src/front/core.h).
+  Such a field is not a recursive field: the fold code gives it as a
+  plain field, with no induction hypothesis. No row folds an `IO` yet. A
+  field with F to the left of the arrow and a D with a parameter stay
+  REFUSE_CELL. The rows are 3 domain rows in test/fronttool.c (`Ask`
+  admitted, `NegAsk` and `ParAsk` REFUSE_CELL). The gate prints one line
+  for all domain rows, thus the counts do not change.
+- O96 (S6 s2): domain/domain.lang has `family IO (A : Type 0)` with
+  `ioPure` and the operations `ioShow`, `ioLookup`, `ioConfirm` and
+  `ioSubmit`, each with the fields `(xOf : U256) (xNext : U256 -> IO A)`.
+  A scratch guest def `ioShow U256 5u (fun (w : U256) => ioPure U256
+  (u256Add w 1u))` checks, and `langc --kit eval` prints it (not a row).
+  The gate is GREEN with the s1 counts (mandate-lang-work/S6-s2-gate.log).
+- O97 (S6 s2): `Sig` is `Prod Nat (Prod U256 U256)` (three words), thus a
+  word response cannot hold the signature that `confirm` gets (Q-S6-7).
+  The builtin names `Prod` and `Sum` are VIS_GUEST, `Nat` is VIS_INTERNAL.
+  A guest def of an operation must also get a path such as `Path Flag
+  (signedAs ...) flagYes` from a response that is not closed. s2 part 2
+  finds the form (for example a dependent case on the Flag value).
+- O98 (S6 s2 part 2, Q-S6-8 (a)): `elim` takes a motive on Flag: the yes
+  case, the no case, then the scrutinee. src/front/check.c: elim_case,
+  elim_domain (a printed motive: the Flag at the argument position 3) and
+  rule_elim. src/front/eval.c reduce_elim: FIELD 0 and INST 2, as at Sum.
+  src/lower.c has no `elim` (no change). docs/host/README.md has no
+  `elim` row (no note). Rows: the evals flagElimYes (1) and flagElimNo
+  (0); the check refusals flag-elim-case.lang and elim-nat-motive.lang
+  (TYPE_MISMATCH, kit mode).
+- O99 (S6 s2 part 2, Q-S6-7 (a)): the `ioConfirm` field is `confirmNext :
+  Prod Nat (Prod U256 U256) -> IO A`. The R1 field rule admits it.
+  test/fronttool.c has the domain row `SigAsk` (NULL).
+- O100 (S6 s2 part 2): examples/precompile.lang has the guest defs
+  `show`, `lookup` and `submit` (`B`, a word `w`, `next : U256 -> IO B`)
+  and `confirm R d a g next` (`next : Signed d a g -> IO (Option R)`).
+  `confirm` asks for the digest `hash712 d g`. The elim on `signedAs d g
+  x a` with the motive `Path Flag (signedAs d g x a) f -> IO (Option R)`,
+  applied to `refl`, gives `next (pack x p)` or `ioPure (Option R) none`
+  (a revert). A `Confirmed` is a `Signed`. Only `confirm` checks its
+  response. The check refusal confirm-no-case.lang (the no case calls
+  next) gives TYPE_MISMATCH (kit mode).
+- O101 (S6 s2 part 2): `langc run` has no answer form yet (s2 part 3).
+  Gate: mandate-lang-work/S6-s2p2-gate.log EXIT 0, 48 sorted lines; check
+  refusals 182, evals 165; the other counts are the s1 counts. DONE in s2
+  part 3 (O102).
+- O102 (S6 s2 part 3, Q-S6-1 (a)): src/front/check.c: the role ROLE_IO is
+  an entry with the result `IO (Option (Prod State (List Out)))`. run_call
+  evaluates it. io_step prints `K NAME OP WORD` at ioShow, ioLookup,
+  ioConfirm or ioSubmit and keeps the operation open. The next script line
+  is the answer `OP WORDS` (run_answer: one U256 word, or `confirm V R S`,
+  built as `pair V (pair R S)`). The run applies the next field to it. At
+  ioPure the entry steps apply (trap, revert, ok and the Out lines). The
+  new code RUN_ANSWER (docs/host/README.md): a different OP, a wrong word
+  count, or the script ends at an open operation.
+- O103 (S6 s2 part 3): examples/precompile.lang has the IO entries
+  `askWord` (show, lookup, submit; the receipt goes into the state) and
+  `askConfirm` (confirm on the parts of tConfirmDigest with the test-key
+  viewer). test/run/precompile.script has the calls 3 to 5. The digest
+  that the run shows is the word of `langc eval tConfirmDigest`.
+  tConfirmSig gives ok; the same r and s with v 27 give revert.
+  test/run.sh has 3 RUN_ANSWER rows.
+- O104 (S6 s2 part 3): the run finds the IO operations by the constructor
+  names (io_ops in src/front/check.c). A bad answer word gets the code of
+  entry_arg, as an entry argument does; no row. The lowering does not
+  lower the IO entries (precompile 27 steps and emit 24, the same), so
+  the EVM side of IO is open.
+- O105 (S6 s2 part 3): gate mandate-lang-work/S6-s2p3-gate.log EXIT 0, 48
+  sorted lines. The one change from S6-s2p2-gate.log: run refusals 10 to
+  13. Runs 6 (precompile.script has the calls 3 to 5), check refusals
+  182, evals 165, the other counts the same.
+- O106 (S6 close): mutants in a scratch tree (`make -k -B -j 2 check`),
+  8 of 8 KILLED. M1: the OP check of run_answer (the new row of
+  test/run.sh, USER ruling (a); the first wrong-OP row ends at an open
+  operation, so the end check hid M1). M2: the confirm word count 3u to
+  1u (precompile.script). M3: the end check of run_command (the
+  open-operation row). M4: ROLE_IO in role_of (EVAL_ENTRY askWord). M5:
+  r and s change places in the confirm answer (precompile.script). M6:
+  the Flag cases of reduce_elim change places (flagElimYes, flagElimNo).
+  M7: u256Mul to OP_U256_ADD (37 rows; the first is PATH_END tGateLe).
+  M8: the closed-data test of the arrow field (the ParAsk domain row).
+  M8b: CORE_PI to CORE_LAM in the arrow field (412 rows).
+- O107 (S6 close): gate mandate-lang-work/S6-close-gate.log EXIT 0, 48
+  sorted lines. The one change from S6-s2p3-gate.log: run refusals 13
+  to 14. The other counts the same. docs/host/README.md: an IO call has
+  one line for each operation, before the line of its result.
+- O108 (S6 staged review): the normal form of
+  `fun (f : Flag) => elim (fun (x : Flag) => Unit) unit unit f` was
+  refused with TYPE_NOT_FUNCTION: the bare motive inferred Unit from
+  its second case before inspecting the Flag scrutinee. The checker
+  now tries the Flag interpretation first when these positions overlap,
+  with fallback for shorter eliminations returning functions. Five C
+  roundtrip regressions cover Unit and one-constructor-family results,
+  functional Flag results, and applied Unit and family eliminations.
+- O109 (S6 staged review): the old `show` and `lookup` passed only raw
+  words. An honest `lookup` with a Session and a Cred continuation was
+  TYPE_MISMATCH, so neither operation implemented the typed response
+  of 4.3 and 4.6. They are now `showWord` and `lookupWord`; the typed
+  `show R d m root next` and `lookup R d m session next` assemble a Sig
+  from three word responses. Requests are `hash digest tag`, with tag
+  0u, 1u and 2u for v, r and s. The digest binds the root and mandate id
+  for show, or sid, merchant and view root for lookup. Only v = 27u or
+  28u is valid. `checkSig` shares the dependent Flag check with confirm;
+  failed recovery reverts before the typed continuation. Five run cases
+  cover honest View and Cred responses, a changed root, a changed sid
+  and an invalid v. The fifteen request words match independent
+  `cast keccak` vectors. Raw constructors remain the wire interface;
+  the chain decoder remains the boundary check of 4.8.
 
 ## 11. Questions for the USER (S1)
 
@@ -997,3 +1195,38 @@ New questions (S5), RULED (a) 2026-10-24 (section 1):
   `u256If : Flag -> U256 -> U256 -> U256`), so that `side` lowers and the
   chain runs `merkle2`. RECOMMENDED; RULED (s1b: `flagIf` is the select, O79). (c) K4c lowers a Nat fold at a
   word position as a loop. (d) no Merkle EVM rows in S5.
+
+New questions (S6), kickoff 2026-10-25 (section 1):
+
+- Q-S6-1 (O86): the form of `IO`. (a) extend the R1 cell check to admit
+  a strictly positive field `D -> F params` (D closed data); `IO` in
+  domain/domain.lang with a word response; the guest defs of the typed
+  operations check the response at run time; `langc run` gets a form
+  that answers the operations (s2). (b) a first-order `IO`. (c) move `IO`
+  after S7. RULED (a).
+- Q-S6-2 (O88): the product in `total`. (a) a kit op `u256Mul` (a trap on
+  overflow). (b) repeated `u256Add`. RULED (a).
+- Q-S6-3 (O88): the key of a closed `Confirmed`. (a) a public test key
+  (anvil account 0) is the viewer of a second demo mandate; `cast wallet
+  sign --no-hash` signs off line; the S5 demo terms stay. (b) sign demoView
+  again with the test key. (c) refusal rows only. RULED (a).
+- Q-S6-4 (O88): the form of `Gate`. (a) a Flag select (one Sig). (b) `Sum
+  (Le (spent + total) autoLimit) (Confirmed s c k)`. RULED (b).
+- Q-S6-5: the `prove` operation of `Op`. (a) S9 adds it with
+  `PolicyProof`; S6 has `show`, `lookup`, `confirm` and `submit`. (b) S6
+  adds it with a placeholder response. RULED (a).
+- Q-S6-6 (O82): the form of `Lt now (expiry m)`. (a) `def Lt a b` is
+  `Path Flag (flagIf (u256Eq a b) flagNo (u256Le a b)) flagYes`, the form
+  of `canonStep`. (b) `Le (now + 1) (expiry m)`. RULED (a).
+- Q-S6-7 (O97): the response of `confirm`. (a) the field `confirmNext`
+  takes the closed data `Prod Nat (Prod U256 U256)` (the form of `Sig`);
+  the R1 field rule admits it; a script answer line has three words. (b)
+  three word responses: v, then r, then s (three `ioConfirm` steps). (c)
+  the response word is a handle, and `lookup` gives the parts.
+  RECOMMENDED (a). RULED (a).
+- Q-S6-8 (O98): the form that gives `confirm` the path of a `Signed`
+  from a response that is not closed (`flagIf` is not dependent; `elim`
+  took Sum, Unit and domain families only). (a) a dependent `elim` on
+  Flag; `confirm` uses the inspect form, and the no case reverts. (b) a
+  kit op `flagAssert b : Path Flag b flagYes` (a trap on flagNo). (c) no
+  kit change; `confirm` gives the raw Sig. RECOMMENDED (a). RULED (a).

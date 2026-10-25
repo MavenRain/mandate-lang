@@ -46,6 +46,17 @@ run_refused 1 EVAL_ENTRY examples/contract.lang "1 $caller nope"
 run_refused 1 RUN_INIT examples/entries.lang "1 $caller addPrice 1 2"
 run_refused 1 EVAL_ENTRY examples/map.lang "1 $caller putAll 3"
 run_refused 1 EVAL_ENTRY examples/map.lang "1 $caller allBooks"
+# S6 s2 part 3: an answer with a different OP, an answer with a wrong word count, and a script that ends at an open operation.
+run_refused 1 RUN_ANSWER examples/precompile.lang "1 $caller askWord 5u
+lookup 6u"
+run_refused 1 RUN_ANSWER examples/precompile.lang "1 $caller askConfirm
+confirm 28 0x1u"
+run_refused 1 RUN_ANSWER examples/precompile.lang "1 $caller askWord 5u"
+# S6 close (O106): a different OP, then an answer to each other operation. Thus the end check cannot hide the OP check.
+run_refused 1 RUN_ANSWER examples/precompile.lang "1 $caller askWord 5u
+lookup 5u
+lookup 6u
+submit 7u"
 
 # A NUL cannot hide extra words. Calls before the bad line keep their output.
 printf '1 %s balance\n2 %s deposit 5u\000 6u\n' "$caller" "$caller" >"$tmp/bad.script"
