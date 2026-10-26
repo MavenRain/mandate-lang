@@ -171,6 +171,12 @@ questions):
   s2 (mandate-lang-work/S8-s2-PROMPT.md).
 - Q-S8-5 (a): a new IO entry askSpend; the IO run and the chain run link
   by value.
+- 2026-10-26 (S8 s2, claude7): the five G2 rows are in
+  test/run/mandate-g2.script (on `langc run`) and in part 2 of
+  test/diff.sh (on `evm`). docs/VALIDATION.md has the table of the
+  attack forms and the residual of 4.5 (O159 to O165). The gate gives
+  EXIT 0. s2 is DONE and STAGED; the USER commits. The next step is S8
+  s3 (mandate-lang-work/S8-s3-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -588,7 +594,7 @@ call (S9).
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | DONE 2026-10-25 (s1 kickoff 2026-10-24; s1 DONE 2026-10-24 without `merkle2V`, gate counts examples 41, check refusals 171, evals 148, precompile 21 steps, the other S4 counts the same; Q-S5-5 RULED (b); s1b DONE 2026-10-25: `flagIf` is the word select (O79), `side` lowers, 3 `merkle2V` rows (O80), gate counts precompile 24 steps, the other s1 counts the same; s2 DONE 2026-10-25: `Mandate`, `View`, `Session`, `Line`, `Cart`, `cartHash` and 4 guest refusals (PATH_END), Q-S5-6 RULED (a) (the sorted `List`), Q-S5-7 RULED (a) (`def Le`), gate counts check refusals 175, evals 154, the other s1b counts the same, O81 to O84): base 65527a8; three sessions: s1 `Listing`, `listingHash`, `merkle`, `Prov`, `Signed`, `View`; s2 `Line`, `Cart`, `cartHash`, `Mandate`; the close; Q-S5-1 to Q-S5-4 RULED (a); O68 to O84; close DONE 2026-10-25: gate EXIT 0 (mandate-lang-work/S5-close-gate.log), the s2 counts: examples 41, parse refusals 19, check refusals 175, kit-only refusals 19, evals 154, runs 6, run refusals 10, asmtool 8 of 8, builds 3, lower refusals 15, checks 32, dispatch 20, evm steps 43, precompile 24 steps, mock 13 rows, diff 15 rows, emit 24 |
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
-| S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | IN PROGRESS (s1 DONE 2026-10-26, STAGED, O152 to O158; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
+| S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | IN PROGRESS (s1 DONE 2026-10-26, O152 to O158; s2 DONE 2026-10-26, STAGED, O159 to O165; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | PLANNED |
 | S10 | Mutants and close | PLANNED |
 
@@ -1799,6 +1805,48 @@ call (S9).
   stopped at lookup-user.lang (REFUSE_KIT in the guest mode); a line in
   test/check/kit.txt fixed it.
 - O158 (S8 s1, the open O items): S8 s1 closed none of O55, O60, O61,
+  O66, O67 to O100 and O102 to O107; they stay open. O117 goes to S9.
+- O159 (S8 s2, O148, O24, Q-S1-6 (a), Q-S8-3 (a)): G2,
+  test/run/mandate-g2.script on examples/mandate.lang. The view s8gRoot
+  has the depth 2 and the leaves s8gA (the sku 41u, the price 90u),
+  s8gU (42u, 60u), s8gP (43u, 70u) of the merchant 0xaa and s8gM (41u,
+  50u) of the merchant 0xbb, at the indexes 0 to 3. Each listing has
+  the maxQty 5u. Row 1 is the grant of row 1 of
+  test/run/mandate-gas.script (gMandate: the cap 1000000u, the autoLimit
+  100u). Each check row has the session 401u: `check` does not use the
+  session, thus one cred sig is sufficient.
+- O160 (S8 s2, O148): the three refused forms of G2. Row 2: the line of
+  s8gA with the price 95u gives NO_PATH (2u) (the leaf hash changes).
+  Row 3: s8gM at the index 3 (the path is valid) gives WRONG_MERCHANT
+  (3u): the merchant of the line is 0xbb, not the merchant 0xaa of the
+  session. Row 4: s8gX (41u, 30u), not in the view, with the path of
+  s8gA gives NO_PATH (2u). Each total is not more than the autoLimit,
+  thus each row gets to only its own check. The codes of O148 are
+  correct.
+- O161 (S8 s2, O148, Q-S8-3 (a)): the two residual forms of G2. Rows 5
+  to 7 (an unrequested item, s8gU): the quantity 1u (60u) with a
+  confirm sig that is not valid (the v word changed to 55 - v) gives
+  0u, the quantity 2u (120u) with that sig gives NEED_CONFIRM (8u), and
+  the quantity 2u with the confirm sig gives 0u. Rows 8 to 10 (a
+  promoted item, s8gP: 70u and 140u) give 0u, 8u and 0u. The quantity
+  sets the total, thus one listing gives the three rows of each form.
+- O162 (S8 s2, the generator): mandate-lang-work/S8-s2-gen.pl computes
+  the hashes with `langc --kit eval` and signs with the anvil key 0
+  (RFC 6979: the same bytes in each run). It copies the script and the
+  .out file to test/run/ only when each code is the code of O160 and
+  O161. O146 asks for no guest terms in s2, thus
+  examples/precompile.lang does not change.
+- O163 (S8 s2, the docs, O146): O146 names no file for the residual of
+  4.5. s2 adds the section "The attack corpus (S8)" at the end of
+  docs/VALIDATION.md (the template text stays): a table of the honest
+  spend and each attack form, its row, and its refusal code or its
+  bound, then the residual of 4.5 (the bound of the `Gate` of 4.1).
+- O164 (S8 s2, the gate): mandate-lang-work/S8-s2.sh. `make -j 2 check`
+  gives EXIT 0 (mandate-lang-work/S8-s2-gate.log). The compare with the
+  S8 s1 gate log gives FINAL DIFFERS, as expected: the 4 GATE DIFF
+  lines (mandate-lang-work/S8-s2.txt) are the new G2 rows and the
+  counts. The git diff sha is the same before and after the run.
+- O165 (S8 s2, the open O items): S8 s2 closed none of O55, O60, O61,
   O66, O67 to O100 and O102 to O107; they stay open. O117 goes to S9.
 
 ## 11. Questions for the USER (S1)

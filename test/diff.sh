@@ -19,6 +19,8 @@
 # examples/mandate.lang (the chain id 1337, the mock at the token 0x..ee).
 # S8 s1 (Q-S8-1 (a), O148): part 2 also runs test/run/mandate-honest.script,
 # test/run/mandate-g1.script and test/run/mandate-g3.script on examples/mandate.lang.
+# S8 s2 (Q-S8-3 (a), O148): part 2 also runs test/run/mandate-g2.script on
+# examples/mandate.lang.
 set -u
 fail=0
 rows=0
@@ -209,6 +211,7 @@ script examples/mandate.lang test/mandate-evm.script
 script examples/mandate.lang test/run/mandate-honest.script
 script examples/mandate.lang test/run/mandate-g1.script
 script examples/mandate.lang test/run/mandate-g3.script
+script examples/mandate.lang test/run/mandate-g2.script
 config=$_config
 
 rm -rf "$tmp"
