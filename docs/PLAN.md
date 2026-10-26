@@ -185,6 +185,11 @@ questions):
   the x402 route (O166 to O170). The final S8 gate gives EXIT 0. s3 is
   DONE and STAGED, and S8 is DONE; the USER commits. The next step is
   S9 (mandate-lang-work/S9-kickoff-PROMPT.md).
+- 2026-10-26 (S9 kickoff, claude7): the USER commit 3074cd1 (S8 s3) is
+  in HEAD. The fresh gate gives EXIT 0 and the same result as the S8
+  s3 gate (O172). The USER RULED Q-S9-1 to Q-S9-4 (a) (section 11). The
+  S9 plan is O171 to O179. The next step is S9 s1
+  (mandate-lang-work/S9-s1-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -603,7 +608,7 @@ call (S9).
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
-| S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | PLANNED |
+| S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | IN PROGRESS (kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; the row with the real verifier BLOCKED, O178) |
 | S10 | Mutants and close | PLANNED |
 
 ## 10. Open items
@@ -1905,6 +1910,99 @@ call (S9).
   O55, O60, O61, O66, O67 to O100 and O102 to O107; they stay open.
   O117 goes to S9. The mutants of the S8 rows come in S10 (section 9).
   The next slice is S9 (mandate-lang-work/S9-kickoff-PROMPT.md).
+- O171 (S9 kickoff, the reading of 4.9 for S9): `PolicyProof m s c`
+  is a primitive with the index values m, s and c and no type
+  parameter (2.2, O14). A guest program gets a term of it only from
+  a verified answer of `prove s c` (O28); the term holds the proof
+  bytes. The prover response is untrusted bytes until the verifier
+  of O173 accepts it for the pending request's verifier address and
+  all five public words. Only then may the handler construct the
+  indexed term and pass it to the IO continuation. A failed check
+  refuses the answer without calling the continuation or making a
+  `PolicyProof` term.
+  `PolicyOk m s c` is a new factor of `Spend` next to `Gate`
+  (Q-S9-3 (a)): `Unit` when `policyVerifier m` is 0, else
+  `PolicyProof m s c`. In S9 the verifier is the mock of 4.9: the
+  proof is one word equal to `keccak (K, policyId m, domain, id m,
+  sid s, cartHash c)`, with K the fixed mock key. The mock tests the
+  transport and the binding of the five words only; it gives no
+  evidence of policy authorization (4.9).
+- O172 (S9 kickoff, the fresh gate): mandate-lang-work/S9-k.sh (the
+  copy of S8-s3.sh). `make -j 2 check` gives EXIT 0
+  (mandate-lang-work/S9-k-gate.log, 417 s). The compare with the S8
+  s3 gate log gives FINAL SAME: there is no repo edit after the s3
+  gate. The git diff sha is the same before and after the run.
+- O173 (S9 s1, the STATICCALL kit op, O12, O29): a new kit op for the
+  policy verifier: the verifier address, the five words and the proof
+  bytes in, one word out. The lowering (src/lower.c, src/evm.c,
+  src/ir.h) writes the five words and then the proof bytes after the
+  scratch, does one STATICCALL to the address, and gives 1 only when
+  the call succeeds, the return data is 32 bytes and the word is 1;
+  else it gives 0. A failed call does not revert (the precompile path
+  reverts). The call form is the mock form of O29 (no selector). On
+  `langc run` the op runs the mock rule at the mock address and gives
+  0 at another address (Q-S9-2 (a)). The mock verifier is a new
+  `asmtool` runtime: it reverts when the calldata is not 192 bytes,
+  and it returns the word 1 or 0 by the mock rule. A second new
+  `asmtool` verb gives the mock proof of five words (Q-S9-4 (a)). The
+  kit rows on `evm` against `langc run`: a correct proof (1), a wrong
+  proof (0), the mock reverts (0), and an address with no code (the
+  call succeeds with no return data: 0). The last two are the
+  failing-call row of Q-S2-3 (a). The op name, the mock key K and the
+  mock address (next to the token mock 0x..ee) are builder calls.
+- O174 (S9 s2, the guest side, Q-S6-5 (a), O28, O93): `PolicyProof`,
+  `PolicyOk` and the fifth `Op` `prove` in domain/domain.lang,
+  examples/mandate.lang and examples/precompile.lang. One perl
+  generator adds `PolicyOk` to each copy of the prelude in test/check
+  (12 files have `policyVerifier`). For `policyVerifier == 0`,
+  `PolicyOk` reduces to `Unit`, so the old rows keep their results.
+  An IO script answers `prove` with a literal proof word from the
+  `asmtool` verb of O173. The handler validates the response as O171
+  requires; the response cannot supply replacement public inputs.
+  Run rows must show that the correct proof reaches the continuation,
+  while a wrong proof word, another cart's proof, another session's
+  proof, a verifier address with no code and a malformed answer are
+  refused before the continuation receives a `PolicyProof`. A new
+  check row: a guest program that makes a `PolicyProof` term without
+  `prove` is REFUSED.
+- O175 (S9 s3, the contract, O117): the decoder of `check` and
+  `execute` takes the proof as a `bytes` tail (the offset word, the
+  length word, the data; Q-S9-1 (a)). The mock reads one word (length
+  32). When `policyVerifier` is not 0, `check` calls the kit op of
+  O173 with the five words of 4.9 and the proof bytes; it gives
+  NO_POLICY (10u) when the op gives 0. This replaces the S7
+  fail-closed NO_POLICY of O117. When `policyVerifier` is 0 there is
+  no call. The gas and size rows of S7 change; s3 records the new
+  numbers.
+- O176 (S9 s3, the rows): the S7 rows "NO_POLICY (10u): grant with a
+  policy verifier" (test/run/mandate.script, test/mandate-evm.script)
+  become a spend with a correct mock proof (ok, one pay line) and the
+  NO_POLICY refusal rows: no proof (length 0), a changed word, the
+  proof of another cart, the proof of another session, and a verifier
+  address with no code. test/diff.sh deploys the mock verifier, as it
+  deploys the token mock, and runs the rows on `evm` against `langc
+  run` (the differential rows with the mock).
+- O177 (S9 s4, the docs and the close): the section "The zkpolicy
+  condition (S9)" in docs/VALIDATION.md: the mock rule, the rows of
+  O173, O174 and O176, and the BLOCKED row (O178). The final S9 gate. The
+  mutants of the S8 and S9 rows come in S10 (section 9).
+- O178 (S9 kickoff, the BLOCKED row, Q-S1-3 (a)): the row with the
+  real verifier waits for zkpolicy-lang P10 (its EVM verifier; not
+  started, it waits for zkml-lang Z9) and for the mandate instance of
+  4.9 (the words in limbs, the cart binding by keccak in the circuit,
+  the approving decision). P10 alone does not close it. The row needs
+  an approving proof that succeeds, a valid proof of a denying
+  decision that gives NO_POLICY, and the proof of an approved cart
+  with another cart that gives NO_POLICY. If the P10 verifier has
+  another call form, the kit op changes (O29). S9 closes without this
+  row (Q-S9-4 (a)).
+- O179 (S9 kickoff, the sessions, Q-S9-4 (a)): s1 the kit op and the
+  mock verifier (O173); s2 the guest side (O174); s3 the contract and
+  the rows (O175, O176); s4 the docs, the final gate and the close
+  (O177). Each session runs its own gate. The kickoff closed none of
+  O55, O60, O61, O66, O67 to O100 and O102 to O107; they stay open.
+  O117 is S9 s3 work (O175). The next step is S9 s1
+  (mandate-lang-work/S9-s1-PROMPT.md).
 
 ## 11. Questions for the USER (S1)
 
@@ -2213,3 +2311,28 @@ New questions (S7), kickoff 2026-10-25 (section 1):
   revert). (b) the existing entries askView, askLookup 11u, askConfirm
   and askWord in one IO script (4 steps, the link in a comment). (c)
   defer the row to S9. RULED (a) (2026-10-26).
+
+S9 kickoff (2026-10-26, claude7): the USER RULED Q-S9-1 to Q-S9-4 by
+AskUserQuestion: all (a).
+
+- Q-S9-1 (O175): the proof in the calldata of `check` and `execute`.
+  (a) a `bytes` tail (the offset word, the length word, the data); the
+  mock reads one word; the real proof needs no decoder change.
+  RECOMMENDED. (b) one fixed word now; the real row changes the
+  decoder and the gas and size rows. RULED (a) (2026-10-26).
+- Q-S9-2 (O173): `langc run` for the kit op, and the mock failures.
+  (a) `langc run` runs the mock rule at the mock address and gives 0
+  at another address; the mock returns 0 for a wrong proof and reverts
+  on a wrong calldata length; the rows: ok, wrong proof, revert, no
+  code. RECOMMENDED. (b) the run script states the answer of the call
+  (the rule on one side only). RULED (a) (2026-10-26).
+- Q-S9-3 (O174): the place of `PolicyOk`. (a) a factor of `Spend` next
+  to `Gate` (4.9); one perl generator updates each prelude copy in
+  test/check. RECOMMENDED. (b) `PolicySpend`, the S6 `Spend` with
+  `PolicyOk`; the S6 `Spend` does not change. RULED (a) (2026-10-26).
+- Q-S9-4 (O179): the sessions and the answer of `prove`. (a) four
+  sessions (s1 the kit op, s2 the guest side, s3 the contract and the
+  rows, s4 the close); the IO script answers `prove` with a literal
+  word from a new `asmtool` verb; the real row stays BLOCKED and S9
+  closes without it. RECOMMENDED. (b) three sessions (s1 the kit op
+  and the guest side). RULED (a) (2026-10-26).
