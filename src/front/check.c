@@ -202,6 +202,7 @@ static const Builtin BUILTINS[] = {
   {"hash3", 3, RULE_FIXED, OP_HASH3, OP_U256, 0, VIS_INTERNAL},
   {"hash4", 4, RULE_FIXED, OP_HASH4, OP_U256, 0, VIS_INTERNAL},
   {"ecrecover", 4, RULE_FIXED, OP_ECRECOVER, OP_ADDR, 0, VIS_INTERNAL},
+  {"policyVerify", 7, RULE_FIXED, OP_POLICY_VERIFY, OP_FLAG, 0, VIS_INTERNAL},
   {"addrToU256", 1, RULE_ADDR2, OP_ADDR_TO_U256, OP_U256, 0, VIS_INTERNAL},
 };
 
@@ -2194,25 +2195,26 @@ static const Core *rule_prim(Call *k, Op arg) {
   return k->b->arity < 2u ? op3(c, k->b->op, 0, 1, x, NULL, NULL) : op3(c, k->b->op, 0, 2, x, y, NULL);
 }
 
-/* The curve op ecrecover (S2, R17), hash3 and hash4 (S4, Q-S4-1): a fixed
-   signature over U256 and Nat. The result is the row result. */
+/* The curve op ecrecover (S2, R17), hash3 and hash4 (S4, Q-S4-1), policyVerify (S9 s1, O173): a fixed
+   signature over U256, Nat and Addr. The result is the row result. */
 static const Core *rule_fixed(Call *k) {
-  enum { SHAPE_U256, SHAPE_NAT };
+  enum { SHAPE_U256, SHAPE_NAT, SHAPE_ADDR };
   static const struct {
     Op op;
-    unsigned char arg[4];
+    unsigned char arg[7];
   } ROWS[] = {
     {OP_ECRECOVER, {SHAPE_U256, SHAPE_NAT, SHAPE_U256, SHAPE_U256}},
     {OP_HASH3, {SHAPE_U256, SHAPE_U256, SHAPE_U256}},
     {OP_HASH4, {SHAPE_U256, SHAPE_U256, SHAPE_U256, SHAPE_U256}},
+    {OP_POLICY_VERIFY, {SHAPE_ADDR, SHAPE_U256, SHAPE_U256, SHAPE_U256, SHAPE_U256, SHAPE_U256, SHAPE_U256}},
   };
   Checker *c = k->c;
   const Value *u = tyop(c, OP_U256, 0, NULL, NULL, NULL);
-  const Value *shape[2] = {u, nat_type(c)};
-  const Core *args[4] = {NULL, NULL, NULL, NULL};
+  const Value *shape[3] = {u, nat_type(c), tyop(c, OP_ADDR, 0, NULL, NULL, NULL)};
+  const Core *args[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
   size_t row = 0;
   while (row < sizeof ROWS / sizeof ROWS[0] && ROWS[row].op != k->b->op) row++;
-  if (row == sizeof ROWS / sizeof ROWS[0] || k->b->arity > 4u) return NULL;
+  if (row == sizeof ROWS / sizeof ROWS[0] || k->b->arity > 7u) return NULL;
   for (uint32_t i = 0; i < k->b->arity; i++) {
     args[i] = check(c, k->args[i], shape[ROWS[row].arg[i]]);
     if (args[i] == NULL) return NULL;
@@ -4694,7 +4696,23 @@ static int print_result(Machine *m, const char *name, const Value *v, FILE *out,
   return 1;
 }
 
+/* Host execution has its own definition cache. A mock result must neither
+   enter conversion checking nor replace a runtime STATICCALL on a later build. */
+static int mock_context(const Machine *checked, Machine *host) {
+  *host = *checked;
+  host->policy_mock = 1;
+  host->defs = arena_alloc(host->arena, (size_t)host->def_cap * sizeof *host->defs);
+  if (host->defs == NULL)
+    return diag_fail(host->diag, "OOM", NULL, "out of memory");
+  memcpy(host->defs, checked->defs, (size_t)host->def_count * sizeof *host->defs);
+  for (uint32_t i = 0; i < host->def_count; i++) host->defs[i].value = NULL;
+  return 1;
+}
+
 int eval_command(Machine *m, const char *name, char *const *args, int arg_count, FILE *out, FILE *err) {
+  Machine host;
+  if (!mock_context(m, &host)) return 1;
+  m = &host;
   uint32_t d = find_def(m, name);
   Entry entry;
   const Value *v;
@@ -5036,6 +5054,9 @@ static uint32_t split_words(char *line, char **word, uint32_t cap) {
 }
 
 int run_command(Machine *m, const char *path, const char *text, size_t len, FILE *out) {
+  Machine host;
+  if (!mock_context(m, &host)) return 1;
+  m = &host;
   char *word[ENTRY_PARAMS_MAX + ENTRY_LIST_MAX + 3u];
   uint32_t init = find_def(m, "init");
   uint32_t line = 0;

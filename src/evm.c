@@ -419,6 +419,29 @@ static int emit_stmt(Emit *e, const IrStmt *s) {
     asm_jumpdest(a, end);
     return 1;
   }
+  case IR_STMT_VERIFY: { /* S9 s1 (O173): the input after the data, a 0 return word, no revert */
+    for (size_t i = 0; i < s->field_count; i++) {
+      if (!emit_expr(e, s->fields[i])) return 0;
+      emit_store(a, e->data + 32u * (uint64_t)i);
+    }
+    asm_op(a, EVM_OP_PUSH0);
+    emit_store(a, e->scratch);
+    asm_push(a, 32);
+    asm_push(a, e->scratch);
+    asm_push(a, 32u * (uint64_t)s->field_count);
+    asm_push(a, e->data);
+    if (!emit_expr(e, s->expr)) return 0;
+    /* 1 only when the call succeeds, RETURNDATASIZE is 32 and the word is 1. */
+    emit_ops(a, (const Op[]){EVM_OP_GAS, EVM_OP_STATICCALL, EVM_OP_RETURNDATASIZE}, 3);
+    asm_push(a, 32);
+    asm_op(a, EVM_OP_EQ);
+    asm_push(a, e->scratch);
+    asm_op(a, EVM_OP_MLOAD);
+    asm_push(a, 1);
+    emit_ops(a, (const Op[]){EVM_OP_EQ, EVM_OP_AND, EVM_OP_AND}, 3);
+    emit_store(a, 32u * (uint64_t)s->local);
+    return 1;
+  }
   case IR_STMT_PRECOMPILE: { /* S2: the input after the data, the output in a block */
     uint64_t in = e->data, out = e->blocks + 32u * e->block_next;
     e->block_next += s->out_count;

@@ -190,6 +190,9 @@ questions):
   s3 gate (O172). The USER RULED Q-S9-1 to Q-S9-4 (a) (section 11). The
   S9 plan is O171 to O179. The next step is S9 s1
   (mandate-lang-work/S9-s1-PROMPT.md).
+- 2026-10-26 (S9 s1, claude7): the kit op policyVerify and the mock
+  policy verifier are done (O173, O180 to O188). The s1 gate gives
+  EXIT 0. The next step is S9 s2 (mandate-lang-work/S9-s2-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -608,7 +611,7 @@ call (S9).
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
-| S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | IN PROGRESS (kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; the row with the real verifier BLOCKED, O178) |
+| S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | IN PROGRESS (kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; s1 DONE 2026-10-26, O180 to O188; the row with the real verifier BLOCKED, O178) |
 | S10 | Mutants and close | PLANNED |
 
 ## 10. Open items
@@ -2003,6 +2006,66 @@ call (S9).
   O55, O60, O61, O66, O67 to O100 and O102 to O107; they stay open.
   O117 is S9 s3 work (O175). The next step is S9 s1
   (mandate-lang-work/S9-s1-PROMPT.md).
+- O180 (S9 s1, the base): the Step 0 of s1 found HEAD c5b0114 (the
+  USER S9 kickoff commit on 3074cd1) with the tree c785e6c8, not the
+  tree 7ed369a7 of the kickoff stage: the USER commit edits O171, O174
+  and O177. The USER RULED (a): c5b0114 is the S9 base.
+- O181 (S9 s1, D2b, the proof form): the S7 `List U256` argument
+  lowers to a calldata loop (src/lower.c: `ir_calldata` at `head + 32
+  k`). The IR has no store of a word at a computed memory offset, thus
+  a list cannot go into the call data of the STATICCALL. The proof p
+  is one U256 word, and the call data is always 192 bytes (the five
+  words, then p). The op cannot make a call of another length; the
+  wrong-length row is a direct `evm run` of 160 bytes to the mock.
+- O182 (S9 s1, D1, the op): `policyVerify v a b c d e p : Flag`
+  (VIS_INTERNAL, OP_POLICY_VERIFY next to OP_ECRECOVER, the arity 7,
+  the RULE_FIXED row of src/front/check.c). v : Addr is the verifier;
+  a to e : U256 are policyId, domain, id, sid and cartHash of 4.9;
+  p : U256 is the proof word. The result is flagYes or flagNo.
+- O183 (S9 s1, D3 and D4, the mock key and the mock rule): K is
+  0x6d616e646174652d6d6f636bu (the ASCII bytes "mandate-mock",
+  right-aligned in the word). The proof word is correct when it equals
+  keccak256 of the 192 bytes K, a, b, c, d, e. The mock runtime
+  reverts when CALLDATASIZE is not 192; else it returns the word 1
+  (correct) or 0.
+- O184 (S9 s1, D5 and D6, the address and the asmtool verbs): the
+  mock verifier is at 0x00000000000000000000000000000000000000ef (next
+  to the token mock 0x..ee). `asmtool verifier` prints the mock runtime
+  (asm.h has no CALLDATACOPY, thus five CALLDATALOAD and MSTORE pairs).
+  `asmtool proof A B C D E` prints the mock proof word of the five
+  words (hex, 0x optional). `asmtool proof 1 2 3 4 5` gives
+  dc8004ddf654dce8070ef349963c6c9651b39f78359bf96b519811e811f03060.
+- O185 (S9 s1, D7, the IR statement): IR_STMT_VERIFY (before
+  IR_STMT_PRECOMPILE): local := 1 or 0. lower_verify (src/lower.c) has
+  no memo: each use is one call. src/evm.c writes the six words at
+  e->data, sets the return word to 0 first, and does STATICCALL with
+  all the gas. The result is the AND of the success bit, RETURNDATASIZE
+  EQ 32 and the return word EQ 1. There is no jump to e->revert: a
+  failed call gives 0 (Q-S2-3 (a)). block_may_trap and block_words
+  have no edit.
+- O186 (S9 s1, D8, explicit host execution): `langc run` and `langc eval`
+  use a separate definition cache. When all 7 arguments are closed, the
+  host computes the result: flagYes when v is 0x..ef and p equals the
+  mock proof of a to e, else flagNo (another address has no code, or
+  code that the rule does not know). Checking and lowering keep every
+  call opaque, including closed calls and cached helpers, so neither
+  conversion checking nor compiled code can trust the mock rule.
+- O187 (S9 s1, D9, the rows): examples/precompile.lang has the view
+  `verifyPolicy v a b c d e p` after line 344 (the copy check of lines
+  99 to 344 does not change). test/precompile.sh puts the mock
+  verifier at 0x..ef in the alloc: the proof of the words 1 to 5 gives
+  1, the word 9 gives 0, the address 0x..ab (no code) gives 0, and a
+  direct `evm run` of 160 bytes to the mock reverts (31 steps, 0
+  failures). test/run/precompile.script has the first three rows on
+  `langc run` (flagYes, flagNo, flagNo); precompile.out changes by
+  these 3 lines only.
+- O188 (S9 s1, the gate): mandate-lang-work/S9-s1.sh (the copy of
+  S9-k.sh; it also builds build/asmtool). `make -j 2 check` gives EXIT
+  0 (mandate-lang-work/S9-s1-gate.log, 445 s). The compare with the
+  S9 kickoff gate log gives FINAL DIFFERS: 2 GATE DIFF lines
+  (mandate-lang-work/S9-s1.txt). The new rows add lines and change
+  counts, thus a difference is expected. The git diff sha is the same
+  before and after the run.
 
 ## 11. Questions for the USER (S1)
 

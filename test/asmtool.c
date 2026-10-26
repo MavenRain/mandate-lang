@@ -217,17 +217,89 @@ static int checks(const Asm *runtime) {
   return passed == CHECKS ? 0 : 1;
 }
 
+/* The mock policy verifier of S9 s1 (O173, D3 and D4). The call data is the
+   five words policyId, domain, id, sid and cartHash, then the proof word.
+   Call data of other than 192 bytes reverts. The result is the word 1 when
+   the proof word equals keccak256 of the key K and the five words, else 0.
+   K is the ASCII bytes "mandate-mock", right-aligned in the word. */
+static const unsigned char MOCK_KEY[12] = {'m', 'a', 'n', 'd', 'a', 't', 'e', '-', 'm', 'o', 'c', 'k'};
+static const char HEX[] = "0123456789abcdef";
+
+static int verifier(Asm *a, FILE *err) {
+  unsigned char key[32] = {0};
+  memcpy(key + 20, MOCK_KEY, sizeof MOCK_KEY);
+  asm_init(a);
+  Label revert = asm_label(a);
+  asm_op(a, EVM_OP_CALLDATASIZE);
+  asm_push(a, 192);
+  asm_op(a, EVM_OP_EQ);
+  asm_op(a, EVM_OP_ISZERO);
+  asm_jump_if(a, revert);
+  asm_push_word(a, key);
+  asm_op(a, EVM_OP_PUSH0);
+  asm_op(a, EVM_OP_MSTORE);
+  for (uint64_t i = 0; i < 5u; i++) arg(a, 32u * i, 32u * (i + 1u));
+  asm_push(a, 192);
+  asm_op(a, EVM_OP_PUSH0);
+  asm_op(a, EVM_OP_SHA3);
+  asm_push(a, 160);
+  asm_op(a, EVM_OP_CALLDATALOAD);
+  asm_op(a, EVM_OP_EQ);
+  asm_op(a, EVM_OP_PUSH0);
+  asm_op(a, EVM_OP_MSTORE);
+  asm_push(a, 32);
+  asm_op(a, EVM_OP_PUSH0);
+  asm_op(a, EVM_OP_RETURN);
+  asm_jumpdest(a, revert);
+  asm_op(a, EVM_OP_PUSH0);
+  asm_op(a, EVM_OP_PUSH0);
+  asm_op(a, EVM_OP_REVERT);
+  return asm_finish(a, err);
+}
+
+/* Reads the hex word TEXT (0x is optional, 64 digits or fewer) into W, big
+   endian and padded on the left. Returns 0 on a bad digit. */
+static int hex_word(const char *text, unsigned char w[32]) {
+  const char *digits = strncmp(text, "0x", 2) == 0 ? text + 2 : text;
+  size_t n = strlen(digits);
+  int ok = n > 0 && n <= 64;
+  memset(w, 0, 32);
+  for (size_t i = 0; ok && i < n; i++) {
+    const char *at = strchr(HEX, digits[n - 1u - i] | 0x20);
+    ok = at != NULL && *at != '\0';
+    if (ok) w[31u - i / 2u] |= (unsigned char)((at - HEX) << (4u * (i % 2u)));
+  }
+  return ok;
+}
+
+/* Writes the mock proof word of the five words in ARGS: keccak256 of the key
+   K and the five words (S9 s1, D4). */
+static int proof(char *const *args, FILE *out, FILE *err) {
+  unsigned char input[192] = {0};
+  unsigned char digest[32];
+  char text[65] = {0};
+  memcpy(input + 20, MOCK_KEY, sizeof MOCK_KEY);
+  for (size_t i = 0; i < 5u; i++)
+    if (!hex_word(args[i], input + 32u * (i + 1u))) return fprintf(err, "asmtool: bad word %s\n", args[i]), 0;
+  keccak256(input, sizeof input, digest);
+  to_hex(digest, sizeof digest, text);
+  return fprintf(out, "%s\n", text) > 0;
+}
+
 int main(int argc, char **argv) {
   static Asm runtime;
   static Asm creation;
   static Asm token;
+  static Asm verify;
   const char *mode = argc == 2 ? argv[1] : "";
-  if (argc > 2) return fputs("usage: asmtool [runtime|creation|abi|mock]\n", stderr), 2;
+  if (argc == 7 && strcmp(argv[1], "proof") == 0) return proof(argv + 2, stdout, stderr) ? 0 : 1;
+  if (argc > 2) return fputs("usage: asmtool [runtime|creation|abi|mock|verifier|proof A B C D E]\n", stderr), 2;
   if (!answer(&runtime, stderr)) return 1;
   if (strcmp(mode, "mock") == 0) return mock(&token, stderr) && asm_write_hex(&token, stdout, stderr) ? 0 : 1;
+  if (strcmp(mode, "verifier") == 0) return verifier(&verify, stderr) && asm_write_hex(&verify, stdout, stderr) ? 0 : 1;
   if (strcmp(mode, "runtime") == 0) return asm_write_hex(&runtime, stdout, stderr) ? 0 : 1;
   if (strcmp(mode, "creation") == 0) return asm_creation(&creation, &runtime, stderr) && asm_write_hex(&creation, stdout, stderr) ? 0 : 1;
   if (strcmp(mode, "abi") == 0) return abi(stdout, stderr) ? 0 : 1;
-  if (argc == 2) return fputs("usage: asmtool [runtime|creation|abi|mock]\n", stderr), 2;
+  if (argc == 2) return fputs("usage: asmtool [runtime|creation|abi|mock|verifier|proof A B C D E]\n", stderr), 2;
   return checks(&runtime);
 }

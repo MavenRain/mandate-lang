@@ -271,8 +271,60 @@ static int fold_regression(const char *name, const char *step, const char *seed,
   return ok;
 }
 
+/* A verifier call must survive checking and host execution, including when a
+   closed helper was already cached while checking a dependent type. */
+static int policy_regression(const char *verifier, const char *want) {
+  char source[1024], expected[64];
+  snprintf(source, sizeof source,
+    "state State := makeState\n"
+    "def init : State := makeState\n"
+    "def decision : Flag := policyVerify %s "
+      "1u 2u 3u 4u 5u 0xdc8004ddf654dce8070ef349963c6c9651b39f78359bf96b519811e811f03060u\n"
+    "def cached : Path Flag decision decision := refl\n"
+    "def view : Env -> State -> Flag := fun env s => decision\n", verifier);
+  const char *script = "1 0x00000000000000000000000000000000000000aa view\n";
+  Arena arena;
+  Diag diag;
+  DeclList decls;
+  Machine machine;
+  IrProgram program = {NULL, 0};
+  FILE *out = tmpfile();
+  if (out == NULL) return 0;
+  arena_init(&arena, (size_t)1 << 25);
+  diag_init(&diag);
+  int ok = front_load(&arena, "closed-policy", source, strlen(source), &decls, &diag)
+    && check_program(&arena, &decls, &machine, &diag, CHECK_KIT);
+  if (ok) {
+    ok = run_command(&machine, "closed-policy", script, strlen(script), out) == 0;
+    char output[128] = {0};
+    snprintf(expected, sizeof expected, "1 view = %s\n", want);
+    rewind(out);
+    ok = ok && fgets(output, sizeof output, out) != NULL && strcmp(output, expected) == 0;
+    rewind(out);
+    ok = ok && eval_command(&machine, "decision", NULL, 0, out, stderr) == 0;
+    rewind(out);
+    snprintf(expected, sizeof expected, "%u\n", strcmp(want, "flagYes") == 0);
+    ok = ok && fgets(output, sizeof output, out) != NULL && strcmp(output, expected) == 0;
+  }
+  if (ok) {
+    const CtorInfo *ci = &machine.ctors[machine.families[machine.state_family].first_ctor];
+    ok = lower_entries(&machine, ci, &program, NULL)
+      && program.func_count == 1 && statements(program.funcs[0].body, IR_STMT_VERIFY) == 1;
+  }
+  if (!ok) {
+    fprintf(stderr, "FAIL lower closed-policy: host execution or runtime verifier (functions %zu, calls %u)\n",
+            program.func_count, program.func_count == 1 ? statements(program.funcs[0].body, IR_STMT_VERIFY) : 0);
+    if (diag.set) diag_print(&diag, stderr);
+  }
+  fclose(out);
+  arena_release(&arena);
+  return ok;
+}
+
 int main(void) {
   int ok = 1;
+  ok &= policy_regression("0x00000000000000000000000000000000000000ef", "flagYes");
+  ok &= policy_regression("0x00000000000000000000000000000000000000ab", "flagNo");
   const char *head = "fun (x : U256) (acc : U256) => x";
   const char *sum = "fun (x : U256) (acc : U256) => u256Add x acc";
   ok &= fold_regression("discard-static-seed-trap", head, "u256Add 1u " WMAX, 7, 1);

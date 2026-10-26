@@ -115,6 +115,10 @@ typedef enum {
                      data = the field_count words of fields */
   IR_STMT_CALL,   /* EVM CALL to the token word expr (C-K4-14, C-K4d-6): the
                      selector of name(types), then the field_count words of fields */
+  IR_STMT_VERIFY, /* mandate-lang S9 s1 (O173): local := 1 or 0; EVM STATICCALL to the
+                     verifier word expr with the field_count words of fields as input;
+                     1 only when the call succeeds and returns the 32-byte word 1;
+                     a failed call gives 0 and does not revert */
   IR_STMT_PRECOMPILE /* sealed-lang S2: local := address of a new block of out_count
                         words; EVM STATICCALL to the precompile address with the
                         field_count words of fields as input; the output words fill

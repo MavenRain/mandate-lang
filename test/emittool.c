@@ -107,12 +107,37 @@ static int binary(const char *name, IrOp op, uint64_t left, uint64_t right, uint
   return expression(name, &expr, word, trap, NULL, 0);
 }
 
+/* Identity returns exactly the bytes sent, and malformed BLAKE2 input fails
+   its STATICCALL. Exercise both the return-data checks and failure handling. */
+static int verify(const char *name, uint64_t address, size_t words, uint64_t answer, unsigned want) {
+  Asm *a = calloc(1, sizeof *a);
+  if (a == NULL) return 0;
+  Emit e = {a, 32, 96, 0, 96, asm_label(a), asm_label(a), EVM_BUILD_IR};
+  const IrExpr target = {.kind = IR_EXPR_CONST, .value = address};
+  const IrExpr first = {.kind = IR_EXPR_CONST, .value = answer};
+  const IrExpr *const fields[] = {&first, &first};
+  const IrStmt call = {.kind = IR_STMT_VERIFY, .local = 0, .expr = &target,
+                       .fields = fields, .field_count = words};
+  unsigned char word[32] = {0};
+  word[31] = (unsigned char)want;
+  if (!emit_stmt(&e, &call)) { free(a); return 0; }
+  emit_load(a, 0);
+  return finish(name, a, &e, word, 0);
+}
+
 int main(void) {
   if (system("command -v evm >/dev/null 2>&1") != 0) {
     puts("emit: skipped (evm not on PATH)");
     return 0;
   }
   int ok = 1;
+  ok &= verify("verify-one", 4, 1, 1, 1);
+  ok &= verify("verify-zero", 4, 1, 0, 0);
+  ok &= verify("verify-two", 4, 1, 2, 0);
+  ok &= verify("verify-long", 4, 2, 1, 0);
+  ok &= verify("verify-empty", 4, 0, 1, 0);
+  ok &= verify("verify-no-code", 0xab, 1, 1, 0);
+  ok &= verify("verify-failed-call", 9, 1, 1, 0);
   unsigned char input[64] = {0}, slot[32], value[32] = {0};
   input[31] = 7;
   input[63] = 4;

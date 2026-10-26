@@ -6,8 +6,8 @@
 # precompile address 1 (ecrecover) before it entered this file. A closed
 # ecrecover computes in the host (front/secp256k1.c, test/secptool.c); an open
 # ecrecover stays stuck (R17). This gate
-# compares the chain result only. It needs evm (go-ethereum), bc, od and
-# build/slottool. Run it from the kit root.
+# compares the chain result only. It needs evm (go-ethereum), bc, od,
+# build/slottool and build/asmtool. Run it from the kit root.
 set -u
 fail=0
 steps=0
@@ -94,6 +94,23 @@ else
   call "out 24" mulV 9u 4u
   call "out 0" mulV 0u 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffu
   call trap mulV 2u 0x8000000000000000000000000000000000000000000000000000000000000000u
+  # verifyPolicy (S9 s1, O173, Q-S2-3 (a)): one STATICCALL to the mock verifier at 0x..ef
+  # (`asmtool verifier`). The proof of the words 1 to 5 is `asmtool proof 1 2 3 4 5` (1); the word 9
+  # is a wrong proof (0); the address 0x..ab has no code, the call succeeds with no return data (0).
+  ver=00000000000000000000000000000000000000ef
+  alloc=",\"0x$ver\":{\"balance\":\"0x0\",\"code\":\"0x$(build/asmtool verifier)\",\"storage\":{}}"
+  pf=0x$(build/asmtool proof 1 2 3 4 5)u
+  call "out 1" verifyPolicy "0x$ver" 1u 2u 3u 4u 5u "$pf"
+  call "out 0" verifyPolicy "0x$ver" 1u 2u 3u 4u 5u 9u
+  call "out 0" verifyPolicy 0x00000000000000000000000000000000000000ab 1u 2u 3u 4u 5u "$pf"
+  alloc=
+  # The mock reverts when the call data is not 192 bytes: a direct `evm run` of the five words
+  # only (160 bytes). The op always sends 192 bytes (O181, D2b), so it cannot make this call.
+  steps=$((steps + 1))
+  case $(evm run --code "$(build/asmtool verifier)" --input "$(printf '%064x%064x%064x%064x%064x' 1 2 3 4 5)" 2>&1) in
+    *"execution reverted"*) ;;
+    *) echo "FAIL precompile verifier 160 bytes: no revert"; fail=$((fail + 1)) ;;
+  esac
 fi
 
 # S7 s2 (Q-S7-1 (a), O138): the lines between BEGIN COPY and END COPY of

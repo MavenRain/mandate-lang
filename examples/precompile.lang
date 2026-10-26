@@ -765,3 +765,9 @@ def askSpend : (env : Env) -> (s : State) -> IO (Option (Prod State (List Out)))
                 submit (Option (Prod State (List Out))) 11u (fun (z : U256) =>
                   ioPure (Option (Prod State (List Out)))
                     (elim (fun (f : Flag) => Option (Prod State (List Out))) (some (pair (makeState (cons z (sigs s))) nil)) none (u256Eq z 0u))))))
+
+-- verifyPolicy v a b c d e p (S9 s1, O173): one STATICCALL to the policy verifier v with the five words a to e and the proof word p (192 bytes, O181).
+-- The result is flagYes only when the call succeeds, the return data is 32 bytes and the word is 1. A failed call gives flagNo and does not revert (Q-S2-3 (a)).
+-- Explicit host execution uses the mock rule at 0x..ef (D8); checking and lowering keep even closed calls opaque. test/precompile.sh puts the mock verifier (`asmtool verifier`) at that address.
+def verifyPolicy : (env : Env) -> (s : State) -> (v : Addr) -> (a b c d e p : U256) -> Flag :=
+  fun (env : Env) (s : State) (v : Addr) (a b c d e p : U256) => policyVerify v a b c d e p

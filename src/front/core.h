@@ -77,6 +77,7 @@ typedef enum {
   OP_HASH3,
   OP_HASH4,
   OP_ECRECOVER,
+  OP_POLICY_VERIFY,
   OP_ADDR_TO_U256,
   OP_PROJ,
   /* Slice K4a0: Map K V, the map value (k0 v0 k1 v1 ... with the keys in
@@ -333,6 +334,7 @@ typedef struct {
   unsigned depth;
   uint64_t fuel;
   int overflowed;
+  int policy_mock;        /* explicit host execution only, never checking or lowering */
   int has_state;          /* the program declares the state (slice K3a) */
   uint32_t state_family; /* the state family, when has_state is 1 */
   uint32_t fresh; /* the count of fresh levels for the Kan head test */

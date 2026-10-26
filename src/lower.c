@@ -614,6 +614,26 @@ static const IrExpr *lower_curve(Low *l, Stmts *b, const Value *v) {
   return push(l, b, s) && memo_add(l, v, s, s->local) ? ir_local(l, s->local) : NULL;
 }
 
+/* The STUCK value V of policyVerify (S9 s1, O173): local := 1 or 0 from one
+   STATICCALL to the verifier word. The input words are the five words and the
+   proof word (D2b). A failed call gives 0 and does not revert (Q-S2-3 (a)). */
+static const IrExpr *lower_verify(Low *l, Stmts *b, const Value *v) {
+  const IrExpr **fields = v->argc == 7u ? low_alloc(l, 6u * sizeof *fields) : NULL;
+  IrStmt *s = fields != NULL ? new_stmt(l, IR_STMT_VERIFY) : NULL;
+  int ok = s != NULL;
+  if (ok) s->expr = lower_expr(l, b, v->args[0]);
+  ok = ok && s->expr != NULL;
+  for (uint32_t i = 0; ok && i < 6u; i++) {
+    fields[i] = lower_expr(l, b, v->args[i + 1u]);
+    ok = fields[i] != NULL;
+  }
+  if (!ok) return NULL;
+  s->local = l->locals++;
+  s->fields = fields;
+  s->field_count = 6u;
+  return push(l, b, s) ? ir_local(l, s->local) : NULL;
+}
+
 /* hash3 a b c and hash4 a b c d (S4, Q-S4-1): the IR ops are binary, so the
    last 2 words of hash3, and each half of hash4, are an IR_OP_PAIR operand.
    The arguments lower in order. */
@@ -785,6 +805,7 @@ static const IrExpr *lower_expr(Low *l, Stmts *b, const Value *v) {
   if (is_op(v, OP_TO_U256) && v->argc == 1) return lower_expr(l, b, v->args[0]);
   if (is_op(v, OP_ADDR_TO_U256) && v->argc == 1) return lower_expr(l, b, v->args[0]);
   if (is_op(v, OP_ECRECOVER) && v->argc >= 1) return ir_load(l, lower_curve(l, b, v), 0);
+  if (is_op(v, OP_POLICY_VERIFY) && v->argc == 7) return lower_verify(l, b, v);
   if ((is_op(v, OP_HASH3) && v->argc == 3) || (is_op(v, OP_HASH4) && v->argc == 4)) return lower_hash(l, b, v);
   if (is_op(v, OP_KMAP_GET) && v->argc == 3 && field_of(v->args[1], 1u, &f) && form_at(l, f) == FORM_MAP) {
     const IrExpr *key = lower_expr(l, b, v->args[2]);

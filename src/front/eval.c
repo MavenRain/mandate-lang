@@ -26,7 +26,7 @@ static const char *const OP_NAMES[] = {
   [OP_FLAG_IF] = "flagIf", [OP_U256_ADD] = "u256Add", [OP_U256_SUB] = "u256Sub", [OP_U256_MUL] = "u256Mul",
   [OP_U256_LE] = "u256Le",
   [OP_U256_EQ] = "u256Eq", [OP_TO_U256] = "toU256",
-  [OP_NAT_DIV] = "natDiv", [OP_NAT_MOD] = "natMod", [OP_HASH] = "hash", [OP_HASH712] = "hash712", [OP_ECRECOVER] = "ecrecover",
+  [OP_NAT_DIV] = "natDiv", [OP_NAT_MOD] = "natMod", [OP_HASH] = "hash", [OP_HASH712] = "hash712", [OP_ECRECOVER] = "ecrecover", [OP_POLICY_VERIFY] = "policyVerify",
   [OP_HASH3] = "hash3", [OP_HASH4] = "hash4",
   [OP_ADDR_TO_U256] = "addrToU256",
   [OP_ADDR_EQ] = "addrEq", [OP_PROJ] = "?", [OP_KMAP] = "Map", [OP_KMAP_OF] = "mapOf",
@@ -52,7 +52,7 @@ static const unsigned char OP_ARITY[] = {
   [OP_NAT_EQ] = 2, [OP_NAT_LE] = 2, [OP_FLAG_IF] = 3, [OP_U256_ADD] = 2,
   [OP_U256_SUB] = 2, [OP_U256_MUL] = 2, [OP_U256_LE] = 2,
   [OP_U256_EQ] = 2, [OP_TO_U256] = 1, [OP_ADDR_EQ] = 2,
-  [OP_NAT_DIV] = 2, [OP_NAT_MOD] = 2, [OP_HASH] = 2, [OP_HASH712] = 2, [OP_ECRECOVER] = 4,
+  [OP_NAT_DIV] = 2, [OP_NAT_MOD] = 2, [OP_HASH] = 2, [OP_HASH712] = 2, [OP_ECRECOVER] = 4, [OP_POLICY_VERIFY] = 7,
   [OP_HASH3] = 3, [OP_HASH4] = 4,
   [OP_ADDR_TO_U256] = 1,
   [OP_PROJ] = 1, [OP_KMAP] = 2, [OP_KMAP_OF] = VARIES, [OP_KMAP_GET] = 3, [OP_KMAP_SET] = 4,
@@ -1475,6 +1475,29 @@ static const Value *recover(Machine *m, const Value *const *a, uint32_t n) {
   return val_word(m, WORD_ADDR, w);
 }
 
+/* policyVerify v a b c d e p (S9 s1, O173, D8): explicit host execution uses
+   the mock rule of D4. The result is flagYes when v is the mock
+   verifier 0x..ef and p equals keccak256 of the key K ("mandate-mock",
+   right-aligned) and the words a to e, else flagNo. Checking and lowering
+   keep even closed calls opaque: their result depends on deployed code. */
+static const Value *policy_verify(Machine *m, const Value *const *a, uint32_t n) {
+  static const unsigned char key[12] = {'m', 'a', 'n', 'd', 'a', 't', 'e', '-', 'm', 'o', 'c', 'k'};
+  static const unsigned char mock[32] = {[31] = 0xef};
+  unsigned char data[192] = {0}, digest[32], v[32], p[32];
+  int closed = n == 7u;
+  for (uint32_t i = 0; closed && i < n; i++)
+    closed = a[i]->kind == VAL_WORD;
+  if (!m->policy_mock || !closed)
+    return opaque(m, OP_POLICY_VERIFY, a, n);
+  memcpy(data + 20, key, sizeof key);
+  for (uint32_t i = 1; i < 6u; i++)
+    word_bytes(a[i]->word, data + 32u * i);
+  keccak256(data, sizeof data, digest);
+  word_bytes(a[0]->word, v);
+  word_bytes(a[6]->word, p);
+  return flag(m, memcmp(v, mock, 32) == 0 && memcmp(p, digest, 32) == 0);
+}
+
 /* finAdd n a b: (a + b) mod n, with no overflow. A[0] is n. */
 static const Value *fin_add(Machine *m, const Value *const *a, uint32_t n) {
   const Value *out;
@@ -2130,6 +2153,7 @@ static const Value *transp_data(Machine *m, const Value *head, const Value *line
   case OP_HASH3:
   case OP_HASH4:
   case OP_ECRECOVER:
+  case OP_POLICY_VERIFY:
   case OP_ADDR_TO_U256:
   case OP_PROJ:
   case OP_KMAP_OF:
@@ -3150,6 +3174,8 @@ static const Value *reduce_op(Machine *m, Op op, uint32_t inst, uint32_t field, 
     return addr_to_u256(m, a, n);
   case OP_ECRECOVER:
     return recover(m, a, n);
+  case OP_POLICY_VERIFY:
+    return policy_verify(m, a, n);
   case OP_FLAG_IF:
     return reduce_flag_if(m, a, n);
   case OP_PROJ:

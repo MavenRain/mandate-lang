@@ -124,6 +124,9 @@ static int interval_sort_regressions(void) {
 
 int main(void) {
   int ok = 1;
+  ok &= checked("def decision : Flag := policyVerify 0x00000000000000000000000000000000000000ef "
+               "1u 2u 3u 4u 5u 0xdc8004ddf654dce8070ef349963c6c9651b39f78359bf96b519811e811f03060u\n"
+              "def forged : Path Flag decision flagYes := refl\n", ORIGIN_PROGRAM, CHECK_KIT, "PATH_END");
   ok &= interval_sort_regressions();
   ok &= domain("family Evil := base | mk (x : Evil) "
                "(bad : Path (Path Evil x x -> Unit) "
