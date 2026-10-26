@@ -47,3 +47,49 @@ bound of the `Gate` of 4.1:
   the cart and the claim, and approved them.
 
 `maxQty` also limits the quantity of each line.
+
+## The x402 route (S8)
+
+The x402 route uses the entries of PLAN section 7 (Q3 (a), Q-S8-4 (a)).
+In the verify step, the facilitator runs `check` by `eth_call`. In the
+settle step, the facilitator sends `execute`. The facilitator does not
+need a key of the user.
+
+`test/run/mandate-x402.script` has these rows in the facilitator order.
+The spend is `tSpend` of `examples/precompile.lang` (the session 11u, the
+total 450u).
+
+| Row | Step | Entry | Result |
+|---|---|---|---|
+| 1 | The user stores the mandate | `grant` | ok |
+| 2, 3 | Verify, two times | `check` | 0u; no `pay` line, and the session stays unused |
+| 4 | Settle | `execute` | pays 450u of the token 0x..ee to the merchant 0xaa |
+| 5 | Settle the same session again | `execute` | revert; no tokens move |
+| 6 | Verify after the settle | `check` | REPLAY (9u) |
+
+`check` does not change the state. Thus the verify step cannot move
+tokens, and the facilitator can do it again. `execute` does all the checks
+of `check` before it pays. Thus a facilitator that does not do the verify
+step also cannot move more tokens than the mandate allows.
+
+The token signature (O18). We read the source of `FiatTokenV2_2`, the
+USDC token (circlefin/stablecoin-evm, the `master` branch at the commit
+fc85788bc7c2 of 2026-08-12):
+
+- `transferWithAuthorization` with a `bytes` signature
+  (`contracts/v2/FiatTokenV2_2.sol` line 116) calls
+  `_transferWithAuthorization` (`contracts/v2/EIP3009.sol` line 118).
+- That function calls `_requireValidSignature` (line 277), which calls
+  `SignatureChecker.isValidSignatureNow` (line 283).
+- `isValidSignatureNow` (`contracts/util/SignatureChecker.sol` lines 39
+  to 48) uses ERC-1271 when the signer address has code (`extcodesize`
+  more than 0, line 84): a STATICCALL of `isValidSignature` on the signer
+  (line 65). When the signer address has no code, it uses ECDSA.
+
+Thus the token accepts an ERC-1271 contract signature. A user account
+with an EIP-7702 delegate has code. Thus the token sends the signature of
+the user to `isValidSignature` of the account, and does not use ECDSA.
+The contract of PLAN section 7 has no `isValidSignature` entry. Thus we
+expect that the token refuses an EIP-3009 signature of a user that has
+the delegate. No row tests this (O150). The x402 route of this repo stays
+`check` plus `execute`.

@@ -177,6 +177,14 @@ questions):
   attack forms and the residual of 4.5 (O159 to O165). The gate gives
   EXIT 0. s2 is DONE and STAGED; the USER commits. The next step is S8
   s3 (mandate-lang-work/S8-s3-PROMPT.md).
+- 2026-10-26 (S8 s3, claude7): the USER commits 5bde71b (s1) and
+  fb2e68e (s2) are in HEAD. The x402 rows are in
+  test/run/mandate-x402.script (on `langc run`) and in part 2 of
+  test/diff.sh (on `evm`). The O18 source read: the USDC token accepts
+  an ERC-1271 signature (O167). docs/VALIDATION.md has the section of
+  the x402 route (O166 to O170). The final S8 gate gives EXIT 0. s3 is
+  DONE and STAGED, and S8 is DONE; the USER commits. The next step is
+  S9 (mandate-lang-work/S9-kickoff-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -594,7 +602,7 @@ call (S9).
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | DONE 2026-10-25 (s1 kickoff 2026-10-24; s1 DONE 2026-10-24 without `merkle2V`, gate counts examples 41, check refusals 171, evals 148, precompile 21 steps, the other S4 counts the same; Q-S5-5 RULED (b); s1b DONE 2026-10-25: `flagIf` is the word select (O79), `side` lowers, 3 `merkle2V` rows (O80), gate counts precompile 24 steps, the other s1 counts the same; s2 DONE 2026-10-25: `Mandate`, `View`, `Session`, `Line`, `Cart`, `cartHash` and 4 guest refusals (PATH_END), Q-S5-6 RULED (a) (the sorted `List`), Q-S5-7 RULED (a) (`def Le`), gate counts check refusals 175, evals 154, the other s1b counts the same, O81 to O84): base 65527a8; three sessions: s1 `Listing`, `listingHash`, `merkle`, `Prov`, `Signed`, `View`; s2 `Line`, `Cart`, `cartHash`, `Mandate`; the close; Q-S5-1 to Q-S5-4 RULED (a); O68 to O84; close DONE 2026-10-25: gate EXIT 0 (mandate-lang-work/S5-close-gate.log), the s2 counts: examples 41, parse refusals 19, check refusals 175, kit-only refusals 19, evals 154, runs 6, run refusals 10, asmtool 8 of 8, builds 3, lower refusals 15, checks 32, dispatch 20, evm steps 43, precompile 24 steps, mock 13 rows, diff 15 rows, emit 24 |
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
-| S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | IN PROGRESS (s1 DONE 2026-10-26, O152 to O158; s2 DONE 2026-10-26, STAGED, O159 to O165; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
+| S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | PLANNED |
 | S10 | Mutants and close | PLANNED |
 
@@ -1848,6 +1856,55 @@ call (S9).
   counts. The git diff sha is the same before and after the run.
 - O165 (S8 s2, the open O items): S8 s2 closed none of O55, O60, O61,
   O66, O67 to O100 and O102 to O107; they stay open. O117 goes to S9.
+- O166 (S8 s3, O150, Q3 (a), Q-S8-4 (a)): the x402 rows,
+  test/run/mandate-x402.script on examples/mandate.lang, in the
+  facilitator order of section 7. Row 1 is the grant of tMandate from
+  self (the token 0x..ee, the mock of test/diff.sh, and the merchant
+  0xaa). The spend is tSpend of examples/precompile.lang (the session
+  11u, the total 450u). Rows 2 and 3 (the verify step: `check` by
+  `eth_call`) give 0u and no pay line; the second `check` shows that
+  `check` does not use the session. Row 4 (the settle step: `execute`)
+  pays 450u of the token 0x..ee to the merchant 0xaa and emits Spent.
+  Row 5, a second `execute` of the same session, reverts, and no tokens
+  move. Row 6 (`check`) gives REPLAY (9u). The .out file has one pay
+  line. mandate-lang-work/S8-s3-gen.pl (rows 1 to 3 from
+  test/run/mandate-honest.script) gives GEN OK on the first run. Part 2
+  of test/diff.sh runs the script on `evm`, after the mandate-g2 line,
+  in the chain id 1337 wrapper.
+- O167 (S8 s3, O18, O150): the source read of FiatTokenV2_2
+  (circlefin/stablecoin-evm, the master branch at the commit
+  fc85788bc7c2 of 2026-08-12), by WebFetch (curl is DENIED by a
+  permission rule). `transferWithAuthorization` with a `bytes`
+  signature (contracts/v2/FiatTokenV2_2.sol line 116) calls
+  `_transferWithAuthorization` (contracts/v2/EIP3009.sol line 118),
+  which calls `_requireValidSignature` (line 277), which calls
+  `SignatureChecker.isValidSignatureNow` (line 283;
+  contracts/util/SignatureChecker.sol lines 39 to 48). When the signer
+  address has code (`extcodesize` more than 0, line 84), it does a
+  STATICCALL of `isValidSignature` (ERC-1271, lines 60 to 76); else it
+  uses ECDSA. The answer: YES, the token accepts an ERC-1271 contract
+  signature. The consequence is a reading, NOT tested: a user account
+  with the EIP-7702 delegate has code, and the contract of section 7
+  has no `isValidSignature` entry; thus we expect that the token
+  refuses an EIP-3009 signature of that user. The notes:
+  mandate-lang-work/S8-s3-o18.txt. No row (Q-S8-4 (a)). O18 is CLOSED
+  by this read.
+- O168 (S8 s3, the docs, O146): the section "The x402 route (S8)"
+  after "The attack corpus (S8)" in docs/VALIDATION.md: the verify
+  step (`check` by `eth_call`), the settle step (`execute`), the table
+  of the six rows of O166, and the O18 answer of O167.
+- O169 (S8 s3, the final S8 gate): mandate-lang-work/S8-s3.sh. `make
+  -j 2 check` gives EXIT 0 (mandate-lang-work/S8-s3-gate.log). The
+  compare with the S8 s2 gate log gives FINAL DIFFERS, as expected: the
+  4 GATE DIFF lines (mandate-lang-work/S8-s3.txt) are the new x402
+  row and the counts. The git diff sha is the same before and after
+  the run.
+- O170 (S8 s3, the S8 close): S8 is DONE. The repo has the rows of the
+  honest spend and of the three attacks (s1, s2), the residual of 4.5
+  (s2) and the x402 route (s3). O18 is CLOSED (O167). S8 closed none of
+  O55, O60, O61, O66, O67 to O100 and O102 to O107; they stay open.
+  O117 goes to S9. The mutants of the S8 rows come in S10 (section 9).
+  The next slice is S9 (mandate-lang-work/S9-kickoff-PROMPT.md).
 
 ## 11. Questions for the USER (S1)
 
