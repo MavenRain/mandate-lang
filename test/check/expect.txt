@@ -180,3 +180,4 @@ spend-after-expiry.lang PATH_END
 flag-elim-case.lang TYPE_MISMATCH
 elim-nat-motive.lang TYPE_MISMATCH
 confirm-no-case.lang TYPE_MISMATCH
+lookup-user.lang TYPE_MISMATCH

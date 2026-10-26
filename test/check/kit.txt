@@ -102,3 +102,4 @@ spend-after-expiry.lang
 flag-elim-case.lang
 elim-nat-motive.lang
 confirm-no-case.lang
+lookup-user.lang

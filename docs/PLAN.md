@@ -149,6 +149,28 @@ questions):
   resume 1b gate. The mutants of S7 ran in s2 (O140, 25 of 25
   KILLED). S7 is DONE and STAGED; the USER commits. The next slice is
   S8.
+- 2026-10-26 (S8 kickoff, claude7): the USER commit 11f166e has the
+  tree of the S7 close (O145). The fresh gate gives EXIT 0, the same as
+  the S7 s4 gate. The S8 plan: O145 to O151, the sessions s1 to s3
+  (O146), Q-S8-1 to Q-S8-4. USER rulings (2026-10-26, S8 kickoff, by
+  AskUserQuestion): all (a). The S8 row is IN PROGRESS. The next step
+  is S8 s1 (mandate-lang-work/S8-s1-PROMPT.md).
+- Q-S8-1 (a): one call script per attack and one for the honest spend,
+  on `langc run` and on `evm`, plus one IO script of the honest spend.
+- Q-S8-2 (a): G1 has two WRONG_SESSION check rows and one type row.
+- Q-S8-3 (a): each residual form has an accept row, a NEED_CONFIRM row
+  and a confirmed row.
+- Q-S8-4 (a): the x402 route stays `check` plus `execute`; O18 is a
+  source read, with no row.
+- 2026-10-26 (S8 s1, claude7): the honest spend, G1 and G3 rows are in
+  test/run/ (on `langc run`) and in part 2 of test/diff.sh (on `evm`).
+  The G1 type row is test/check/lookup-user.lang. The IO-to-chain row is
+  the entry askSpend with test/run/precompile-spend.script (O152 to
+  O158). USER ruling (2026-10-26, S8 s1): Q-S8-5 (a). The gate gives
+  EXIT 0. s1 is DONE and STAGED; the USER commits. The next step is S8
+  s2 (mandate-lang-work/S8-s2-PROMPT.md).
+- Q-S8-5 (a): a new IO entry askSpend; the IO run and the chain run link
+  by value.
 
 ## 2. The reading of R1
 
@@ -565,8 +587,8 @@ call (S9).
 | S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | DONE (2026-10-24): base 68efac0. `Env` `chainid` and `self` (CHAINID, ADDRESS); `hash712`, `hash3` and `hash4` (Q-S4-1 (a), O67); `Hash`, `Sig`, `signer` and `signedAs` (examples/precompile.lang); `mailHash` gives the struct hash of the EIP-712 Mail example by `hash3` and `hash4`; formers/FORMERS.md F16 to F19 and the Fin kit note (Q-S3-1 (a); the bridge-lang section 5 has no F16 to F19 rows); gate EXIT 0: evals 144, precompile 19 steps; O61 stays OPEN; O62 to O67 |
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | DONE 2026-10-25 (s1 kickoff 2026-10-24; s1 DONE 2026-10-24 without `merkle2V`, gate counts examples 41, check refusals 171, evals 148, precompile 21 steps, the other S4 counts the same; Q-S5-5 RULED (b); s1b DONE 2026-10-25: `flagIf` is the word select (O79), `side` lowers, 3 `merkle2V` rows (O80), gate counts precompile 24 steps, the other s1 counts the same; s2 DONE 2026-10-25: `Mandate`, `View`, `Session`, `Line`, `Cart`, `cartHash` and 4 guest refusals (PATH_END), Q-S5-6 RULED (a) (the sorted `List`), Q-S5-7 RULED (a) (`def Le`), gate counts check refusals 175, evals 154, the other s1b counts the same, O81 to O84): base 65527a8; three sessions: s1 `Listing`, `listingHash`, `merkle`, `Prov`, `Signed`, `View`; s2 `Line`, `Cart`, `cartHash`, `Mandate`; the close; Q-S5-1 to Q-S5-4 RULED (a); O68 to O84; close DONE 2026-10-25: gate EXIT 0 (mandate-lang-work/S5-close-gate.log), the s2 counts: examples 41, parse refusals 19, check refusals 175, kit-only refusals 19, evals 154, runs 6, run refusals 10, asmtool 8 of 8, builds 3, lower refusals 15, checks 32, dispatch 20, evm steps 43, precompile 24 steps, mock 13 rows, diff 15 rows, emit 24 |
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
-| S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, STAGED (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
-| S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | PLANNED |
+| S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
+| S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | IN PROGRESS (s1 DONE 2026-10-26, STAGED, O152 to O158; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | PLANNED |
 | S10 | Mutants and close | PLANNED |
 
@@ -1636,6 +1658,148 @@ call (S9).
     file is mandate-lang-work/S7-commit-msg.txt. The USER commits
     (`git commit -s -F`). The next slice is S8
     (mandate-lang-work/S8-PROMPT.md).
+- O145 (S8 kickoff, Step 0, 2026-10-26, claude7): the USER commit
+  11f166e on 17d50a4 (subject "Add S7 mandate contract and dynamic list
+  folds", not the subject of mandate-lang-work/S7-commit-msg.txt) has
+  the tree e4f66d5d of the S7 close: 35 files, 2119 insertions and 42
+  deletions, Signed-off-by. The fresh gate
+  mandate-lang-work/S8-k0-gate.log gives EXIT 0, and its filtered final
+  lines are the same as the S7 s4 gate (mandate-lang-work/S8-k0.txt).
+- O146 (S8 kickoff, the sessions of S8): Q-S8-1 to Q-S8-4 RULED (a).
+  - s1: the honest spend and the G1 and G3 rows. The call scripts
+    test/run/mandate-honest.script, mandate-g1.script and
+    mandate-g3.script with their .out files (Q-S8-1 (a)), the G1 type
+    refusal row in test/check (Q-S8-2 (a)), the IO script of the honest
+    spend (O149), and the three call scripts in part 2 of test/diff.sh.
+  - s2: the five G2 rows in test/run/mandate-g2.script (O148,
+    Q-S8-3 (a)), and the residual of 4.5 in the docs: a table of each
+    attack form, its row, and its refusal code or its bound.
+  - s3: the x402 route (O150, Q-S8-4 (a)): the call script
+    test/run/mandate-x402.script in the facilitator order, the source
+    read of O18, the doc section, and the S8 close (the final gate, the
+    S8 row DONE). The mutants of the S8 rows come in S10 (section 9).
+- O147 (S8 kickoff, the test state): test/run.sh runs each
+  test/run/NAME.script or NAME-PART.script with `build/langc --kit run
+  examples/NAME.lang` and compares the output with the .out file byte
+  for byte. So a new script test/run/mandate-g1.script runs on
+  examples/mandate.lang with no change to test/run.sh.
+  test/run/mandate.script has the honest spend (tSpend of
+  examples/precompile.lang: the session 11u, the merchant 0xaa, the
+  claim hash 77u, the lines demoL0 (quantity 2u) and demoL1 (quantity
+  1u), the total 450u) and one row for each of the 13 codes of `check`:
+  0 (ok), NO_VIEW 1, NO_PATH 2, WRONG_MERCHANT 3, NOT_CANONICAL 4,
+  WRONG_SESSION 5, OVER_CAP 6, EXPIRED 7, NEED_CONFIRM 8, REPLAY 9,
+  NO_POLICY 10, BAD_CALLDATA 11 and NO_MANDATE 12. Part 2 of
+  test/diff.sh runs each call script on `langc run` and on geth `evm`
+  (test/evmchain.sh) with the mock token at 0x..ee and the chain id
+  1337 (O139, O141); the mock balances must equal the pay sums of
+  `langc run`. A new spend needs new words and sigs: the digest words
+  come from `langc eval` of the guest terms, and the sigs come from
+  `cast wallet sign --no-hash` with the anvil keys (O142,
+  test/run/mandate-gas.script).
+- O148 (S8 kickoff, the attack forms and their rows; each code is a
+  hypothesis that the session of the row checks):
+  - G1 (O23, Q-S1-5 (a), Q-S8-2 (a)): a cred sig by another vault key
+    (the credential of another user) and a cred sig of another session
+    from the same vault give WRONG_SESSION (5u). A guest `lookup` with
+    a user argument does not type check (4.3).
+  - G2 (O24, Q-S1-6 (a)): a changed price changes the leaf hash
+    (NO_PATH, 2u); a changed payee gives WRONG_MERCHANT (3u); a listing
+    that is not in the view gives NO_PATH (2u). An unrequested item and
+    a promoted or demoted item, when the listing is in the view, are
+    the residual of 4.5: the rows of Q-S8-3 (a).
+  - G3 (O25, Q-S1-7 (a)): a cart over the price of the cheapest
+    matching listing is the residual of 4.5: the rows of Q-S8-3 (a).
+  - The residual rows (Q-S8-3 (a)) for each of the three forms: a
+    total at or below `autoLimit` gives 0u (the loss is at most
+    `autoLimit` for the mandate); a total above `autoLimit` with no
+    valid confirm sig gives NEED_CONFIRM (8u); a total above
+    `autoLimit` with the confirm sig gives 0u (the user approved).
+  - The honest spend: `check` gives 0u, `execute` pays, and a second
+    spend of the same session gives REPLAY (9u) (O16).
+- O149 (S8 kickoff, the IO-to-chain row, Q-S7-3 (a), Q-S8-1 (a)):
+  `submit` of `IO` stays one word (Q-S7-3 (a)). s1 adds an IO script of
+  the honest spend on `langc run`: the agent program (view, lookup,
+  confirm, submit) with the answers of the script, where the answer of
+  `submit` is the result of `check` on the chain (0u). Gap: no IO
+  script of a spend exists yet; s1 finds the form of the link from the
+  answer form of `langc run` (O101 to O104).
+- O150 (S8 kickoff, the x402 route, Q3 (a), O18, Q-S8-4 (a)): the
+  facilitator runs `check` by `eth_call` in its verify step and sends
+  `execute` in its settle step (section 7). s3 adds a call script in
+  this order: `check` gives 0u and moves no tokens, `execute` pays, and
+  a second `execute` of the same session is refused (REPLAY). For O18,
+  s3 reads the source of the USDC token (FiatTokenV2_2: does
+  `transferWithAuthorization` accept an ERC-1271 contract signature?)
+  and records the answer in an O item. No row and no new entry.
+- O151 (S8 kickoff, the open O items): S7 closed none of O55, O60, O61,
+  O66, O67 to O100 and O102 to O107 (no CLOSED or DONE mark from S7);
+  they stay open. O117 (`NO_POLICY` with a verifier call) goes to S9.
+- O152 (S8 s1, O148, Q-S8-1 (a)): the honest spend,
+  test/run/mandate-honest.script on examples/mandate.lang. Row 1 is
+  grant from self (row 4 of test/mandate-evm.script: tMandate with the
+  token 0x..ee and the cap 1000u). Row 2 is check (row 5): 0u (codeOk).
+  Row 3 is execute (row 26): ok, a pay of 450u from the token 0x..ee to
+  0x..aa and the event Spent. Row 4 is check (row 27): 9u (REPLAY).
+  test/run.sh runs the script on `langc run` (the .out file). Part 2 of
+  test/diff.sh runs it on `evm` (the chain id 1337, the mock at the
+  token 0x..ee). mandate-lang-work/S8-s1-gen.pl made the six files of
+  test/run/ (RFC 6979 sigs, thus a new run gives the same bytes).
+- O153 (S8 s1, O148, Q-S8-2 (a)): G1. test/run/mandate-g1.script has two
+  check rows with a wrong credential. The cred sig is the words 25, 26
+  and 27 (s, r, v) of the check calldata. Row 2: the sig of the anvil
+  key 1 (not the viewer: the credential of another user) on tCredDigest
+  gives 5u. Row 3: the sig of the anvil key 0 (the viewer) on the cred
+  digest of the session 12u gives 5u. The key 0 sig of the generator on
+  tCredDigest is the same as the cred sig of row 5 of
+  test/mandate-evm.script (a check of the word places). The type row is
+  test/check/lookup-user.lang: lookup gets an Addr (a user) in the place
+  of the Session, and `langc --kit check` stops at `bad` with
+  TYPE_MISMATCH. The gate checks it in the kit mode: it is a line of
+  test/check/kit.txt, as cred-other-session.lang (in the guest mode it
+  stops at REFUSE_KIT, because Hash is U256). The file has the defs of
+  cred-other-session.lang (without oSession and bad) and lookupWord,
+  checkSig, readSig and lookup of examples/precompile.lang.
+- O154 (S8 s1, O148, Q-S8-3 (a)): G3, test/run/mandate-g3.script. The
+  view s8hRoot has the depth 2 and the leaves s8hC (the sku 41u, the
+  price 40u: the cheapest match), s8hA (41u, 90u), s8hB (41u, 150u) and
+  the word 9u, all of the merchant 0xaa. s8hSpendA: the sid 301u, s8hA
+  at the index 1. s8hSpendB: the sid 302u, s8hB at the index 2. Row 1
+  is the grant of row 1 of test/run/mandate-gas.script (gMandate: the
+  token 0x..ee, the cap 1000000u, the autoLimit 100u). Row 2: A with the
+  confirm v word changed (55 - v) gives 0u (90u is not more than the
+  autoLimit: the loss is at most the autoLimit). Row 3: B with the
+  confirm v word changed gives NEED_CONFIRM (8u). Row 4: B with the
+  confirm sig gives 0u. examples/precompile.lang has the guest terms
+  s8hSpendA and s8hSpendB (58 lines after gc4Spend; each Gate is `inr
+  Confirmed`). `langc --kit eval` gives rc 0 for each.
+- O155 (S8 s1, O149, Q-S8-5 (a)): the IO-to-chain row. The entry
+  askSpend of examples/precompile.lang (after askLookup) is one agent
+  program: `show` demoRoot, `lookup` the session `pair 11u (pair 0x..aa
+  tView)`, `confirm` (the viewer 0xf39f.., `hash4 confirmType 11u
+  demoCartHash 77u`), then `submit` the sid word 11u. It gives some only
+  when the submit answer is codeOk (0u). test/run/precompile-spend.script
+  uses the answers of the rows 6, 8 and 4 of test/run/precompile.script.
+  Row 1 with `submit 0u` (row 2 of test/run/mandate-honest.out) gives
+  ok. Row 2 with `submit 9u` (REPLAY, row 4) gives revert. The link is
+  by value: the IO answer form cannot refer to the result of a call
+  script, and `submit` stays one word (Q-S7-3 (a)).
+- O156 (S8 s1, O143): the code sizes. The sizes of
+  examples/precompile.lang do not change: the creation code is 1725
+  bytes and the runtime is 1705 bytes (`--runtime`), the same as at
+  11f166e. Thus `langc build` does not put askSpend or the G3 guest
+  terms in the code. examples/mandate.lang stays at the creation 22482
+  and the runtime 22457 bytes.
+- O157 (S8 s1, the gate): mandate-lang-work/S8-s1.sh (from S8-k0.sh)
+  gives EXIT 0 in 578 s, and the git diff sha is the same before and
+  after the run. FINAL DIFFERS from the gate log of the S8 kickoff only
+  in three counts: the check refusals 182 to 183 (lookup-user.lang), the
+  diff gate rows 16 to 19 (the three call scripts) and the runs 9 to 13
+  (the three call scripts and precompile-spend.script). The first run
+  stopped at lookup-user.lang (REFUSE_KIT in the guest mode); a line in
+  test/check/kit.txt fixed it.
+- O158 (S8 s1, the open O items): S8 s1 closed none of O55, O60, O61,
+  O66, O67 to O100 and O102 to O107; they stay open. O117 goes to S9.
 
 ## 11. Questions for the USER (S1)
 
@@ -1901,3 +2065,46 @@ New questions (S7), kickoff 2026-10-25 (section 1):
   confirm sig (3 ecrecover calls, the worst case, as tSpend).
   RECOMMENDED. (b) The auto path: each total at or below the
   autoLimit (no confirm sig). RULED (a).
+- Q-S8-1 (O146, O149, section 8): the form of the attack corpus. (a)
+  one call script per attack and one for the honest spend
+  (test/run/mandate-honest, mandate-g1, mandate-g2 and mandate-g3, the
+  NAME-PART form on examples/mandate.lang), each on `langc run` and on
+  `evm` (part 2 of test/diff.sh), plus one IO script of the honest
+  spend whose `submit` links to the result of `check` on the chain
+  (Q-S7-3 (a)). RECOMMENDED. (b) one call script
+  test/run/mandate-attacks.script with all rows; the IO-to-chain rows
+  go to S9. RULED (a) (2026-10-26).
+- Q-S8-2 (O148, O23, Q-S1-5 (a)): the rows of G1 in the paper form. (a)
+  two check rows, a cred sig by another vault key (the credential of
+  another user) and a cred sig of another session from the same vault,
+  both WRONG_SESSION (5u), and one refusal row in test/check: a guest
+  `lookup` with a user argument does not type check. RECOMMENDED. (b)
+  the two check rows only; the type side stays a note in 4.3. RULED (a)
+  (2026-10-26).
+- Q-S8-3 (O148, O24, O25, 4.5): the residual rows (G2: an unrequested
+  item and a promoted or demoted item, when the listing is in the view;
+  G3: a price over the cheapest matching item). (a) for each of the
+  three forms, a row at or below `autoLimit` that `check` accepts (0u;
+  the loss is at most `autoLimit`), a row above `autoLimit` with no
+  valid confirm sig (NEED_CONFIRM, 8u) and a row above `autoLimit` with
+  the confirm sig (0u); the three refused forms of G2 get one refusal
+  row each. RECOMMENDED. (b) only the row at or below `autoLimit` for
+  each form. RULED (a) (2026-10-26).
+- Q-S8-4 (O150, O18, Q3 (a)): the x402 route. (a) the route stays
+  `check` by `eth_call` plus `execute`; s3 adds a call script in the
+  facilitator order (`check`, `execute`, a second `execute` of the same
+  session) on `langc run` and on `evm`, and a doc section; O18 is a
+  source read of the USDC token code, recorded in an O item, with no
+  row. RECOMMENDED. (b) as (a), plus an ERC-1271 `isValidSignature`
+  entry in the contract and rows with a mock EIP-3009 token. RULED (a)
+  (2026-10-26).
+- Q-S8-5 (O149, Q-S8-1 (a), Q-S7-3 (a)): the IO-to-chain row. The IO
+  answer form cannot refer to the result of a call script, and `submit`
+  stays one word, thus the link is by value. (a) a new entry askSpend in
+  examples/precompile.lang: one agent program `show`, `lookup`,
+  `confirm`, then `submit` of the sid word; it gives some only when the
+  submit answer is codeOk (0u). An IO script gives the answers of the
+  honest spend with `submit 0u` (ok) and with `submit 9u` (REPLAY,
+  revert). (b) the existing entries askView, askLookup 11u, askConfirm
+  and askWord in one IO script (4 steps, the link in a comment). (c)
+  defer the row to S9. RULED (a) (2026-10-26).

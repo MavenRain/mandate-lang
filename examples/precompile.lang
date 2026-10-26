@@ -606,6 +606,64 @@ def gc4Gate : Gate demoDomain gMandate gc4Session gc4Cart 1000u 77u := inr gc4Co
 
 def gc4Spend : Spend demoDomain gMandate 1000u 13u 77u := pack gc4Session (pack gc4Cart (pack gc4Cred (pack refl (pack refl gc4Gate))))
 
+-- The G3 spends (S8 s1, O148, Q-S8-3 (a)) of test/run/mandate-g3.script. The view s8hRoot has the listings s8hC (sku 41u, the price 40u: the cheapest match), s8hA (sku 41u, 90u) and s8hB (sku 41u, 150u) of the merchant 0xaa, and the word 9u. s8hSpendA buys s8hA (90u, not more than the autoLimit 100u of gMandate) and s8hSpendB buys s8hB (150u, more than the autoLimit). Each Gate has the confirm sig. The signatures come from `cast wallet sign --no-hash` with the anvil key 0.
+
+def s8hC : Listing := listing 0x00000000000000000000000000000000000000aa 41u 40u 5u
+
+def s8hA : Listing := listing 0x00000000000000000000000000000000000000aa 41u 90u 5u
+
+def s8hB : Listing := listing 0x00000000000000000000000000000000000000aa 41u 150u 5u
+
+def s8hN0 : Hash := merkle 0 (listingHash s8hC) (cons (listingHash s8hA) nil)
+
+def s8hN1 : Hash := merkle 0 (listingHash s8hB) (cons 9u nil)
+
+def s8hRoot : Hash := merkle 0 (listingHash s8hC) (cons s8hN1 (cons (listingHash s8hA) nil))
+
+def s8hViewSig : Sig := sig 28 0x396bdf22e0d86896af75952a16891114aa3ed1372a684a983e99220795b770efu 0x5f541c03c16d49f6262ed6e5ac4652e9b1b21e64986dfd4c873eb7b273f1dc68u
+
+def s8hView : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack s8hRoot (pack s8hViewSig refl)
+
+def s8hCredSigA : Sig := sig 28 0xeaa172a5ddd21358910dc22ecdad64084bb88c93d1ece20af59a26f2aca56508u 0x365f2077d120f6ff6d7a2b573aa2feecb336b92f61740451999803b0f3dff095u
+
+def s8hConfirmSigA : Sig := sig 28 0xb870a4dc88cbcc450e8e145ece834ad7f1225ba4fc3a469acbb9be5365dffd12u 0x098adf8842b8f7e211125e15c5936a5d4c8bca334cbed8d27c9ebe61fcd41398u
+
+def s8hSessionA : Session demoDomain gMandate := pair 301u (pair 0x00000000000000000000000000000000000000aa s8hView)
+
+def s8hProvA : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u s8hView s8hA := pack 1 (pack (cons s8hN1 (cons (listingHash s8hC) nil)) refl)
+
+def s8hLineA : Line demoDomain gMandate s8hSessionA := pack s8hA (pack 1u (pack s8hProvA (pack refl refl)))
+
+def s8hCartA : Cart demoDomain gMandate s8hSessionA := pack (cons s8hLineA nil) refl
+
+def s8hCredA : Cred demoDomain gMandate s8hSessionA := pack s8hCredSigA refl
+
+def s8hConfirmedA : Confirmed demoDomain gMandate s8hSessionA s8hCartA 77u := pack s8hConfirmSigA refl
+
+def s8hGateA : Gate demoDomain gMandate s8hSessionA s8hCartA 0u 77u := inr s8hConfirmedA
+
+def s8hSpendA : Spend demoDomain gMandate 0u 2u 77u := pack s8hSessionA (pack s8hCartA (pack s8hCredA (pack refl (pack refl s8hGateA))))
+
+def s8hCredSigB : Sig := sig 28 0x2e97054d7a14a2e22275e3b74949a4903bb3cc96f00bb51c96e74fd5891f1795u 0x369c540c6b41641c30b102d8071bc0f7a6a5157f4ac4f96a6976bf11228634edu
+
+def s8hConfirmSigB : Sig := sig 27 0xf98c3393f53771cac815bd172268b58ec3eef399a5de8ac53156d06f47b10febu 0x41b7cdaaf54a99a53389a8607cacb37767b3506897d104ff7c9b70f8b38aa1ecu
+
+def s8hSessionB : Session demoDomain gMandate := pair 302u (pair 0x00000000000000000000000000000000000000aa s8hView)
+
+def s8hProvB : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u s8hView s8hB := pack 2 (pack (cons s8hN0 (cons 9u nil)) refl)
+
+def s8hLineB : Line demoDomain gMandate s8hSessionB := pack s8hB (pack 1u (pack s8hProvB (pack refl refl)))
+
+def s8hCartB : Cart demoDomain gMandate s8hSessionB := pack (cons s8hLineB nil) refl
+
+def s8hCredB : Cred demoDomain gMandate s8hSessionB := pack s8hCredSigB refl
+
+def s8hConfirmedB : Confirmed demoDomain gMandate s8hSessionB s8hCartB 77u := pack s8hConfirmSigB refl
+
+def s8hGateB : Gate demoDomain gMandate s8hSessionB s8hCartB 0u 77u := inr s8hConfirmedB
+
+def s8hSpendB : Spend demoDomain gMandate 0u 2u 77u := pack s8hSessionB (pack s8hCartB (pack s8hCredB (pack refl (pack refl s8hGateB))))
+
 -- The wire operations keep the word responses of Q-S6-1 (a). The typed
 -- show and lookup below assemble and check the signed responses.
 def showWord : (B : Type 0) -> (w : U256) -> (next : U256 -> IO B) -> IO B :=
@@ -692,3 +750,18 @@ def askLookup : (env : Env) -> (s : State) -> (n : U256) -> IO (Option (Prod Sta
     lookup (Prod State (List Out)) demoDomain tMandate (pair n (pair 0x00000000000000000000000000000000000000aa tView))
       (fun (c : Cred demoDomain tMandate (pair n (pair 0x00000000000000000000000000000000000000aa tView))) =>
         ioPure (Option (Prod State (List Out))) (some (pair (makeState (cons n (sigs s))) nil)))
+
+-- askSpend env s (S8 s1, Q-S8-5 (a), O149): the IO side of the honest spend of test/run/mandate-honest.script. It shows demoRoot,
+-- looks up the session 11u, confirms tConfirmDigest with the test-key viewer and submits the sid 11u. The submit answer is the
+-- check result on the chain (the link is by value). Only codeOk (0u) gives some. A different answer (REPLAY 9u) gives none, thus the call reverts.
+def askSpend : (env : Env) -> (s : State) -> IO (Option (Prod State (List Out))) :=
+  fun (env : Env) (s : State) =>
+    show (Prod State (List Out)) demoDomain tMandate demoRoot
+      (fun (v : View demoDomain tMandate) =>
+        lookup (Prod State (List Out)) demoDomain tMandate (pair 11u (pair 0x00000000000000000000000000000000000000aa tView))
+          (fun (c : Cred demoDomain tMandate (pair 11u (pair 0x00000000000000000000000000000000000000aa tView))) =>
+            confirm (Prod State (List Out)) demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 (hash4 confirmType 11u demoCartHash 77u)
+              (fun (k : Signed demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 (hash4 confirmType 11u demoCartHash 77u)) =>
+                submit (Option (Prod State (List Out))) 11u (fun (z : U256) =>
+                  ioPure (Option (Prod State (List Out)))
+                    (elim (fun (f : Flag) => Option (Prod State (List Out))) (some (pair (makeState (cons z (sigs s))) nil)) none (u256Eq z 0u))))))
