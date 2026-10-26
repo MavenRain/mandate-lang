@@ -2066,6 +2066,65 @@ call (S9).
   (mandate-lang-work/S9-s1.txt). The new rows add lines and change
   counts, thus a difference is expected. The git diff sha is the same
   before and after the run.
+- O189 (S9 s2, D1, Q-S9-5 (a)): the s2 base is the USER S9 s1 commit
+  f972a4f (tree bdf26bfa: the 12 s1 files and test/emittool.c,
+  test/fronttool.c and test/lowertool.c, USER confirmed 2026-10-26).
+  `policyCheck d m s c p : Flag` is `policyVerify (policyVerifier m)
+  (policyId m) d (id m) (sid d m s) (cartHash d m s c) p`. `PolicyProof
+  d m s c := (p : U256) * Path Flag (policyCheck d m s c p) flagYes` is
+  a guest def in the model of `Signed`. The index values are d, m, s and
+  c, with no type parameter; the term holds the proof word (D2b of
+  O181). The five words come from the guest values, never from a
+  response (O171). With open values a forged `pack w refl` is REFUSED;
+  with closed values at gMandate the checker keeps `policyVerify`
+  unreduced (trial: `pack 0u refl` gives PATH_END), thus a term comes
+  from `prove` at run time; turn B checks the mock word at 0x..ef.
+  Turn B result (2026-10-26): `langc --kit check` keeps `policyVerify`
+  opaque at 0x..ef, also with the proof word of `asmtool proof` (PATH_END
+  with p = 0x8902..6aa2). Thus a PolicyProof term at pMandate comes only
+  from `prove` at run time. examples/precompile.lang has no static
+  pMandate Spend term.
+- O190 (S9 s2, D2, Q-S9-6 (a)): `PolicyOk d m s c := elim (fun (f :
+  Flag) => Type 0) Unit (PolicyProof d m s c) (addrEq (policyVerifier m)
+  0x00..00)`. The checker accepts the Flag elim to `Type 0` (trial
+  2026-10-26), and `unit` checks at gMandate (the verifier 0). The `Sum`
+  fallback is not necessary.
+- O191 (S9 s2, D3): `Spend` ends `* (g : Gate d m s c spent k) *
+  PolicyOk d m s c`. Each Spend term changes its last part G to `pack G
+  unit` (9 terms in examples/precompile.lang, 8 in 6 test/check rows).
+  The three defs of O189 and O190 go in the copy region before `Spend`
+  (12 lines), thus the copy check of O187 covers the lines 99 to 356. No
+  contract entry of examples/mandate.lang decodes a Spend.
+- O192 (S9 s2, D4): the domain family `IO` adds `ioProve (proveOf :
+  U256) (proveNext : U256 -> IO A)` (five operations).
+  src/front/check.c: `IO_OP_COUNT = 5, IO_PURE = 5, IO_NOT = 6`, and
+  io_ops adds `{"ioProve", "prove", 1u}`. `langc run` answers `prove`
+  with one word (ARG_TYPE_U256).
+- O193 (S9 s2, D5): examples/precompile.lang, after `show`: `proveWord`,
+  `checkProof` (the model of checkSig, with `policyCheck`) and `prove R
+  d m s c next`. The request word is `hash (sid d m s) (cartHash d m s
+  c)`; the response is only p. flagNo gives `ioPure (Option R) none`: no
+  continuation and no `PolicyProof` term.
+- O194 (S9 s2, D6, the rows, turn B): pMandate (gMandate with the
+  verifier 0x..ef) and nMandate (0x..ab, no code); the IO entry
+  askProof; test/run/precompile-proof.script: the correct word (ok,
+  some), a wrong word, the proof of another cart, of another session,
+  nMandate (all none), and malformed responses (`prove 0xzz`, `prove 1u
+  2u`: RUN_ANSWER or EVAL_ARGS before the continuation). PolicyOk rows:
+  gMandate takes `unit`, pMandate does not.
+  test/check/policy-proof-forged.lang: `pack 0u refl` at open d m s c is
+  REFUSED.
+  Turn B result (2026-10-26): DONE. examples/precompile.lang ends with
+  pMandate, nMandate, gd1PolicyOk, askProof and askProofN (outside the
+  copy region 99 to 356). test/run/precompile-proof.script: the correct
+  word gives ok; the word 1u, the word of the sid 102u, the word of the
+  cart hash plus 1 and askProofN at nMandate give revert. The two check
+  rows use tMandate (the mandate of the model row
+  cred-other-session.lang): policy-proof-forged.lang PATH_END,
+  policy-ok-verifier.lang TYPE_MISMATCH; test/check/kit.txt lists
+  both. run_refused: `prove 1u 2u` RUN_ANSWER (exit 1), `prove 0xzz` EVAL_ARGS (exit 2). test/run.sh: 16
+  runs, 18 refusals, 0 failures. The s2 gate: EXIT 0, FINAL DIFFERS
+  (expected).
 
 ## 11. Questions for the USER (S1)
 
@@ -2399,3 +2458,11 @@ AskUserQuestion: all (a).
   word from a new `asmtool` verb; the real row stays BLOCKED and S9
   closes without it. RECOMMENDED. (b) three sessions (s1 the kit op
   and the guest side). RULED (a) (2026-10-26).
+- Q-S9-5 (O174, s2 turn 1, 2026-10-26): the form of `PolicyProof`. (a) a
+  guest def in the model of `Signed` (D1); (b) a new C type former with
+  no guest intro (only the C run handler makes a term). The USER RULED
+  (a) (O189).
+- Q-S9-6 (O174, s2 turn 1, 2026-10-26): the form of `PolicyOk`. (a)
+  first try the Flag elim to `Type 0` with `Unit` (D2); if the checker
+  refuses it, use the `Sum` form and record the reason. The USER RULED
+  (a); the checker accepts the elim (O190).

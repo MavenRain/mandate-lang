@@ -181,3 +181,5 @@ flag-elim-case.lang TYPE_MISMATCH
 elim-nat-motive.lang TYPE_MISMATCH
 confirm-no-case.lang TYPE_MISMATCH
 lookup-user.lang TYPE_MISMATCH
+policy-proof-forged.lang PATH_END
+policy-ok-verifier.lang TYPE_MISMATCH

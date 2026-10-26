@@ -339,9 +339,21 @@ def Confirmed : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d 
 def Gate : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (spent : U256) -> (k : Hash) -> Type 0 :=
   fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (spent : U256) (k : Hash) => Sum (Le (u256Add spent (total d m s c)) (autoLimit m)) (Confirmed d m s c k)
 
--- Spend d m spent now k (PLAN section 3, S6 s1): a session, a cart, the credential, the cap bound, the expiry bound and the gate. spent is the contract state and now is the block time. PolicyOk (S9) and the used session id (O16, S7) are not in the S6 Spend.
+-- policyCheck d m s c p (S9 s2, O189): the policy verifier of m checks the proof word p on the five words of PLAN 4.9. The five words come from the guest values, never from a response (O171).
+def policyCheck : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (p : U256) -> Flag :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (p : U256) => policyVerify (policyVerifier m) (policyId m) d (id m) (sid d m s) (cartHash d m s c) p
+
+-- PolicyProof d m s c (S9 s2, O189, Q-S9-5 (a)): the proof word and the path from its check to flagYes, in the model of Signed. With open values a forged pack w refl is REFUSED.
+def PolicyProof : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) => (p : U256) * Path Flag (policyCheck d m s c p) flagYes
+
+-- PolicyOk d m s c (S9 s2, O190, Q-S9-6 (a)): Unit when m has no policy verifier (the address 0), else PolicyProof d m s c.
+def PolicyOk : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) => elim (fun (f : Flag) => Type 0) Unit (PolicyProof d m s c) (addrEq (policyVerifier m) 0x0000000000000000000000000000000000000000)
+
+-- Spend d m spent now k (PLAN section 3, S6 s1): a session, a cart, the credential, the cap bound, the expiry bound, the gate and PolicyOk (S9 s2, O191). spent is the contract state and now is the block time. PolicyOk (S9) and the used session id (O16, S7) are not in the S6 Spend.
 def Spend : (d : Hash) -> (m : Mandate) -> (spent now : U256) -> (k : Hash) -> Type 0 :=
-  fun (d : Hash) (m : Mandate) (spent now : U256) (k : Hash) => (s : Session d m) * (c : Cart d m s) * (r : Cred d m s) * (b : Le (u256Add spent (total d m s c)) (cap m)) * (t : Lt now (expiry m)) * Gate d m s c spent k
+  fun (d : Hash) (m : Mandate) (spent now : U256) (k : Hash) => (s : Session d m) * (c : Cart d m s) * (r : Cred d m s) * (b : Le (u256Add spent (total d m s c)) (cap m)) * (t : Lt now (expiry m)) * (g : Gate d m s c spent k) * PolicyOk d m s c
 
 def demoTotal : U256 := total demoDomain demoMandate demoSession demoCart
 
@@ -390,7 +402,7 @@ def tConfirmed : Confirmed demoDomain tMandate tSession tCart 77u := pack tConfi
 def tGate : Gate demoDomain tMandate tSession tCart 0u 77u := inr tConfirmed
 
 -- tSpend: spent 0u and now 1u. 450u is not over the cap 1000u, and 1u is before the expiry.
-def tSpend : Spend demoDomain tMandate 0u 1u 77u := pack tSession (pack tCart (pack tCred (pack refl (pack refl tGate))))
+def tSpend : Spend demoDomain tMandate 0u 1u 77u := pack tSession (pack tCart (pack tCred (pack refl (pack refl (pack tGate unit)))))
 
 -- The Le side of the Gate: a cart of one line (demoL0, the quantity 1u) has the total 100u, and 100u is not over the autoLimit 100u.
 def tLineSmall : Line demoDomain tMandate tSession := pack demoL0 (pack 1u (pack tProv (pack refl refl)))
@@ -431,7 +443,7 @@ def gd1Confirmed : Confirmed demoDomain gMandate gd1Session gd1Cart 77u := pack 
 
 def gd1Gate : Gate demoDomain gMandate gd1Session gd1Cart 0u 77u := inr gd1Confirmed
 
-def gd1Spend : Spend demoDomain gMandate 0u 3u 77u := pack gd1Session (pack gd1Cart (pack gd1Cred (pack refl (pack refl gd1Gate))))
+def gd1Spend : Spend demoDomain gMandate 0u 3u 77u := pack gd1Session (pack gd1Cart (pack gd1Cred (pack refl (pack refl (pack gd1Gate unit)))))
 
 -- gd2Spend: the session 102u, 1 line at the Merkle depth 2, the spent amount 200u before it.
 def gd2L0 : Listing := listing 0x00000000000000000000000000000000000000aa 12u 200u 5u
@@ -460,7 +472,7 @@ def gd2Confirmed : Confirmed demoDomain gMandate gd2Session gd2Cart 77u := pack 
 
 def gd2Gate : Gate demoDomain gMandate gd2Session gd2Cart 200u 77u := inr gd2Confirmed
 
-def gd2Spend : Spend demoDomain gMandate 200u 5u 77u := pack gd2Session (pack gd2Cart (pack gd2Cred (pack refl (pack refl gd2Gate))))
+def gd2Spend : Spend demoDomain gMandate 200u 5u 77u := pack gd2Session (pack gd2Cart (pack gd2Cred (pack refl (pack refl (pack gd2Gate unit)))))
 
 -- gd4Spend: the session 104u, 1 line at the Merkle depth 4, the spent amount 400u before it.
 def gd4L0 : Listing := listing 0x00000000000000000000000000000000000000aa 13u 200u 5u
@@ -489,7 +501,7 @@ def gd4Confirmed : Confirmed demoDomain gMandate gd4Session gd4Cart 77u := pack 
 
 def gd4Gate : Gate demoDomain gMandate gd4Session gd4Cart 400u 77u := inr gd4Confirmed
 
-def gd4Spend : Spend demoDomain gMandate 400u 7u 77u := pack gd4Session (pack gd4Cart (pack gd4Cred (pack refl (pack refl gd4Gate))))
+def gd4Spend : Spend demoDomain gMandate 400u 7u 77u := pack gd4Session (pack gd4Cart (pack gd4Cred (pack refl (pack refl (pack gd4Gate unit)))))
 
 -- gd8Spend: the session 108u, 1 line at the Merkle depth 8, the spent amount 600u before it.
 def gd8L0 : Listing := listing 0x00000000000000000000000000000000000000aa 14u 200u 5u
@@ -518,7 +530,7 @@ def gd8Confirmed : Confirmed demoDomain gMandate gd8Session gd8Cart 77u := pack 
 
 def gd8Gate : Gate demoDomain gMandate gd8Session gd8Cart 600u 77u := inr gd8Confirmed
 
-def gd8Spend : Spend demoDomain gMandate 600u 9u 77u := pack gd8Session (pack gd8Cart (pack gd8Cred (pack refl (pack refl gd8Gate))))
+def gd8Spend : Spend demoDomain gMandate 600u 9u 77u := pack gd8Session (pack gd8Cart (pack gd8Cred (pack refl (pack refl (pack gd8Gate unit)))))
 
 -- gc2Spend: the session 202u, 2 lines at the Merkle depth 2, the spent amount 800u before it.
 def gc2L0 : Listing := listing 0x00000000000000000000000000000000000000aa 21u 100u 5u
@@ -553,7 +565,7 @@ def gc2Confirmed : Confirmed demoDomain gMandate gc2Session gc2Cart 77u := pack 
 
 def gc2Gate : Gate demoDomain gMandate gc2Session gc2Cart 800u 77u := inr gc2Confirmed
 
-def gc2Spend : Spend demoDomain gMandate 800u 11u 77u := pack gc2Session (pack gc2Cart (pack gc2Cred (pack refl (pack refl gc2Gate))))
+def gc2Spend : Spend demoDomain gMandate 800u 11u 77u := pack gc2Session (pack gc2Cart (pack gc2Cred (pack refl (pack refl (pack gc2Gate unit)))))
 
 -- gc4Spend: the session 204u, 4 lines at the Merkle depth 2, the spent amount 1000u before it.
 def gc4L0 : Listing := listing 0x00000000000000000000000000000000000000aa 31u 50u 5u
@@ -604,7 +616,7 @@ def gc4Confirmed : Confirmed demoDomain gMandate gc4Session gc4Cart 77u := pack 
 
 def gc4Gate : Gate demoDomain gMandate gc4Session gc4Cart 1000u 77u := inr gc4Confirmed
 
-def gc4Spend : Spend demoDomain gMandate 1000u 13u 77u := pack gc4Session (pack gc4Cart (pack gc4Cred (pack refl (pack refl gc4Gate))))
+def gc4Spend : Spend demoDomain gMandate 1000u 13u 77u := pack gc4Session (pack gc4Cart (pack gc4Cred (pack refl (pack refl (pack gc4Gate unit)))))
 
 -- The G3 spends (S8 s1, O148, Q-S8-3 (a)) of test/run/mandate-g3.script. The view s8hRoot has the listings s8hC (sku 41u, the price 40u: the cheapest match), s8hA (sku 41u, 90u) and s8hB (sku 41u, 150u) of the merchant 0xaa, and the word 9u. s8hSpendA buys s8hA (90u, not more than the autoLimit 100u of gMandate) and s8hSpendB buys s8hB (150u, more than the autoLimit). Each Gate has the confirm sig. The signatures come from `cast wallet sign --no-hash` with the anvil key 0.
 
@@ -642,7 +654,7 @@ def s8hConfirmedA : Confirmed demoDomain gMandate s8hSessionA s8hCartA 77u := pa
 
 def s8hGateA : Gate demoDomain gMandate s8hSessionA s8hCartA 0u 77u := inr s8hConfirmedA
 
-def s8hSpendA : Spend demoDomain gMandate 0u 2u 77u := pack s8hSessionA (pack s8hCartA (pack s8hCredA (pack refl (pack refl s8hGateA))))
+def s8hSpendA : Spend demoDomain gMandate 0u 2u 77u := pack s8hSessionA (pack s8hCartA (pack s8hCredA (pack refl (pack refl (pack s8hGateA unit)))))
 
 def s8hCredSigB : Sig := sig 28 0x2e97054d7a14a2e22275e3b74949a4903bb3cc96f00bb51c96e74fd5891f1795u 0x369c540c6b41641c30b102d8071bc0f7a6a5157f4ac4f96a6976bf11228634edu
 
@@ -662,7 +674,7 @@ def s8hConfirmedB : Confirmed demoDomain gMandate s8hSessionB s8hCartB 77u := pa
 
 def s8hGateB : Gate demoDomain gMandate s8hSessionB s8hCartB 0u 77u := inr s8hConfirmedB
 
-def s8hSpendB : Spend demoDomain gMandate 0u 2u 77u := pack s8hSessionB (pack s8hCartB (pack s8hCredB (pack refl (pack refl s8hGateB))))
+def s8hSpendB : Spend demoDomain gMandate 0u 2u 77u := pack s8hSessionB (pack s8hCartB (pack s8hCredB (pack refl (pack refl (pack s8hGateB unit)))))
 
 -- The wire operations keep the word responses of Q-S6-1 (a). The typed
 -- show and lookup below assemble and check the signed responses.
@@ -702,6 +714,27 @@ def show : (R : Type 0) -> (d : Hash) -> (m : Mandate) -> (r : Hash) -> (next : 
     readSig R (showWord (Option R)) (hash712 d (hash3 viewType r (id m)))
       (fun (x : Sig) => checkSig R d (viewer m) (hash3 viewType r (id m)) x
         (fun (p : Signed d (viewer m) (hash3 viewType r (id m))) => next (pack r p)))
+
+-- proveWord B w next (S9 s2, O193): the host asks the prover for the proof
+-- word of the request word w. The response is the proof word.
+def proveWord : (B : Type 0) -> (w : U256) -> (next : U256 -> IO B) -> IO B :=
+  fun (B : Type 0) (w : U256) (next : U256 -> IO B) => ioProve B w next
+
+-- checkProof gives a typed PolicyProof only after the policy verifier of m
+-- accepts the response p. A bad response gives none, thus the call reverts.
+def checkProof : (R : Type 0) -> (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (p : U256) -> (next : PolicyProof d m s c -> IO (Option R)) -> IO (Option R) :=
+  fun (R : Type 0) (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (p : U256) (next : PolicyProof d m s c -> IO (Option R)) =>
+      elim (fun (f : Flag) => Path Flag (policyCheck d m s c p) f -> IO (Option R))
+        (fun (q : Path Flag (policyCheck d m s c p) flagYes) => next (pack p q))
+        (fun (q : Path Flag (policyCheck d m s c p) flagNo) => ioPure (Option R) none)
+        (policyCheck d m s c p) refl
+
+-- prove asks for the proof word of the session and the cart. The request
+-- word tells the prover the spend; only the response p comes from the
+-- host, and checkProof checks it on the five words of the guest values.
+def prove : (R : Type 0) -> (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (next : PolicyProof d m s c -> IO (Option R)) -> IO (Option R) :=
+  fun (R : Type 0) (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (next : PolicyProof d m s c -> IO (Option R)) =>
+    proveWord (Option R) (hash (sid d m s) (cartHash d m s c)) (fun (p : U256) => checkProof R d m s c p next)
 
 -- lookup takes the session, with no user identifier. Only a vault
 -- signature on its sid, merchant and view root reaches next as Cred.
@@ -771,3 +804,26 @@ def askSpend : (env : Env) -> (s : State) -> IO (Option (Prod State (List Out)))
 -- Explicit host execution uses the mock rule at 0x..ef (D8); checking and lowering keep even closed calls opaque. test/precompile.sh puts the mock verifier (`asmtool verifier`) at that address.
 def verifyPolicy : (env : Env) -> (s : State) -> (v : Addr) -> (a b c d e p : U256) -> Flag :=
   fun (env : Env) (s : State) (v : Addr) (a b c d e p : U256) => policyVerify v a b c d e p
+
+-- pMandate and nMandate (S9 s2, O189, D6): gMandate with the policy verifier 0x..ef (the mock verifier of test/precompile.sh),
+-- and gMandate with the policy verifier 0x..ab (an address with no code). The checker keeps policyVerify opaque at each address,
+-- also with the correct proof word. Thus a PolicyProof at pMandate comes only from prove at run time.
+def pMandate : Mandate := mandate 0x0000000000000000000000000000000000000001 0x0000000000000000000000000000000000000002 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0x00000000000000000000000000000000000000ee 1000000u 100u 2000000000u 2u 0x00000000000000000000000000000000000000ef 0u
+
+def nMandate : Mandate := mandate 0x0000000000000000000000000000000000000001 0x0000000000000000000000000000000000000002 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0x00000000000000000000000000000000000000ee 1000000u 100u 2000000000u 2u 0x00000000000000000000000000000000000000ab 0u
+
+-- gd1PolicyOk (D6): gMandate has no policy verifier (the address 0). Thus PolicyOk is Unit, and unit is a term of it.
+def gd1PolicyOk : PolicyOk demoDomain gMandate gd1Session gd1Cart := unit
+
+-- askProof env s (S9 s2, O189, D6): prove at pMandate for the session gd1Session and the cart gd1Cart. The prove answer is the
+-- proof word. Only a word that the verifier 0x..ef accepts for the five words of the guest values gives some. A different word
+-- gives none, thus the call reverts. askProofN is the same call at nMandate: the verifier has no code, thus each word gives none.
+def askProof : (env : Env) -> (s : State) -> IO (Option (Prod State (List Out))) :=
+  fun (env : Env) (s : State) =>
+    prove (Prod State (List Out)) demoDomain pMandate gd1Session gd1Cart
+      (fun (q : PolicyProof demoDomain pMandate gd1Session gd1Cart) => ioPure (Option (Prod State (List Out))) (some (pair s nil)))
+
+def askProofN : (env : Env) -> (s : State) -> IO (Option (Prod State (List Out))) :=
+  fun (env : Env) (s : State) =>
+    prove (Prod State (List Out)) demoDomain nMandate gd1Session gd1Cart
+      (fun (q : PolicyProof demoDomain nMandate gd1Session gd1Cart) => ioPure (Option (Prod State (List Out))) (some (pair s nil)))

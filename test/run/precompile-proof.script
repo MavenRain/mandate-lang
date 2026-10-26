@@ -1,0 +1,15 @@
+-- The IO run of the policy proof (S9 s2, O189, D6) for examples/precompile.lang. askProof proves at pMandate for gd1Session
+-- and gd1Cart. The five words are policyId 0u, demoDomain, the id 2u, the sid 101u and the cart hash of gd1Cart. Row 1 answers
+-- the word of `asmtool proof` for the five words, thus ok. Row 2 answers 1u. Row 3 answers the word of the sid 102u, and row 4
+-- the word of the cart hash plus 1. The verifier gives flagNo for rows 2 to 4, thus revert. Row 5 is askProofN with the row 1
+-- word: nMandate has the verifier 0x..ab with no code, thus revert.
+1 0x00000000000000000000000000000000000000aa askProof
+prove 0x890232f53a1c74c9c4ff95c6a4ce63ea39fdd7f0f9e3f525cdfe82097b9c6aa2u
+2 0x00000000000000000000000000000000000000aa askProof
+prove 1u
+3 0x00000000000000000000000000000000000000aa askProof
+prove 0x699b93b4e4274a92242571caa569786c955c1482bfea6dd99906a48244f4b01du
+4 0x00000000000000000000000000000000000000aa askProof
+prove 0xabdb1b45ab47d7b3af1c6f3ed47941895c0788a129fbcd76ce903c22f9d5bd1bu
+5 0x00000000000000000000000000000000000000aa askProofN
+prove 0x890232f53a1c74c9c4ff95c6a4ce63ea39fdd7f0f9e3f525cdfe82097b9c6aa2u

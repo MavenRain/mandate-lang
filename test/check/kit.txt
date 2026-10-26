@@ -103,3 +103,5 @@ flag-elim-case.lang
 elim-nat-motive.lang
 confirm-no-case.lang
 lookup-user.lang
+policy-proof-forged.lang
+policy-ok-verifier.lang

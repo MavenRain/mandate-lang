@@ -4968,12 +4968,12 @@ static int call_result(Machine *m, Run *r, uint32_t line, const char *name, Role
 
 /* The IO operations of a run (S6 s2 part 3, Q-S6-1 (a)): the IO
    constructor, the operation word of the script and the answer word count. */
-enum { IO_OP_COUNT = 4, IO_PURE = 4, IO_NOT = 5 };
+enum { IO_OP_COUNT = 5, IO_PURE = 5, IO_NOT = 6 };
 static const struct {
   const char *ctor;
   const char *op;
   uint32_t words;
-} io_ops[IO_OP_COUNT] = {{"ioShow", "show", 1u}, {"ioLookup", "lookup", 1u}, {"ioConfirm", "confirm", 3u}, {"ioSubmit", "submit", 1u}};
+} io_ops[IO_OP_COUNT] = {{"ioShow", "show", 1u}, {"ioLookup", "lookup", 1u}, {"ioConfirm", "confirm", 3u}, {"ioSubmit", "submit", 1u}, {"ioProve", "prove", 1u}};
 
 /* The io_ops index of the IO value V, IO_PURE for ioPure, or IO_NOT. */
 static uint32_t io_op_of(const Machine *m, const Run *r, const Value *v) {

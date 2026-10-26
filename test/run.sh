@@ -61,6 +61,11 @@ run_refused 1 RUN_ANSWER examples/precompile.lang "1 $caller askWord 5u
 lookup 5u
 lookup 6u
 submit 7u"
+# S9 s2 (O189, D6): a prove answer of two words, and a prove answer that is not a word.
+run_refused 1 RUN_ANSWER examples/precompile.lang "1 $caller askProof
+prove 1u 2u"
+run_refused 2 EVAL_ARGS examples/precompile.lang "1 $caller askProof
+prove 0xzz"
 
 # A NUL cannot hide extra words. Calls before the bad line keep their output.
 printf '1 %s balance\n2 %s deposit 5u\000 6u\n' "$caller" "$caller" >"$tmp/bad.script"

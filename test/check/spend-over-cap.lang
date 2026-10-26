@@ -229,9 +229,21 @@ def Confirmed : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d 
 def Gate : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (spent : U256) -> (k : Hash) -> Type 0 :=
   fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (spent : U256) (k : Hash) => Sum (Le (u256Add spent (total d m s c)) (autoLimit m)) (Confirmed d m s c k)
 
--- Spend d m spent now k (PLAN section 3, S6 s1): a session, a cart, the credential, the cap bound, the expiry bound and the gate. spent is the contract state and now is the block time. PolicyOk (S9) and the used session id (O16, S7) are not in the S6 Spend.
+-- policyCheck d m s c p (S9 s2, O189): the policy verifier of m checks the proof word p on the five words of PLAN 4.9. The five words come from the guest values, never from a response (O171).
+def policyCheck : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> (p : U256) -> Flag :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) (p : U256) => policyVerify (policyVerifier m) (policyId m) d (id m) (sid d m s) (cartHash d m s c) p
+
+-- PolicyProof d m s c (S9 s2, O189, Q-S9-5 (a)): the proof word and the path from its check to flagYes, in the model of Signed. With open values a forged pack w refl is REFUSED.
+def PolicyProof : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) => (p : U256) * Path Flag (policyCheck d m s c p) flagYes
+
+-- PolicyOk d m s c (S9 s2, O190, Q-S9-6 (a)): Unit when m has no policy verifier (the address 0), else PolicyProof d m s c.
+def PolicyOk : (d : Hash) -> (m : Mandate) -> (s : Session d m) -> (c : Cart d m s) -> Type 0 :=
+  fun (d : Hash) (m : Mandate) (s : Session d m) (c : Cart d m s) => elim (fun (f : Flag) => Type 0) Unit (PolicyProof d m s c) (addrEq (policyVerifier m) 0x0000000000000000000000000000000000000000)
+
+-- Spend d m spent now k (PLAN section 3, S6 s1): a session, a cart, the credential, the cap bound, the expiry bound, the gate and PolicyOk (S9 s2, O191). spent is the contract state and now is the block time. PolicyOk (S9) and the used session id (O16, S7) are not in the S6 Spend.
 def Spend : (d : Hash) -> (m : Mandate) -> (spent now : U256) -> (k : Hash) -> Type 0 :=
-  fun (d : Hash) (m : Mandate) (spent now : U256) (k : Hash) => (s : Session d m) * (c : Cart d m s) * (r : Cred d m s) * (b : Le (u256Add spent (total d m s c)) (cap m)) * (t : Lt now (expiry m)) * Gate d m s c spent k
+  fun (d : Hash) (m : Mandate) (spent now : U256) (k : Hash) => (s : Session d m) * (c : Cart d m s) * (r : Cred d m s) * (b : Le (u256Add spent (total d m s c)) (cap m)) * (t : Lt now (expiry m)) * (g : Gate d m s c spent k) * PolicyOk d m s c
 
 def demoTotal : U256 := total demoDomain demoMandate demoSession demoCart
 
@@ -280,7 +292,7 @@ def tConfirmed : Confirmed demoDomain tMandate tSession tCart 77u := pack tConfi
 def tGate : Gate demoDomain tMandate tSession tCart 0u 77u := inr tConfirmed
 
 -- tSpend: spent 0u and now 1u. 450u is not over the cap 1000u, and 1u is before the expiry.
-def tSpend : Spend demoDomain tMandate 0u 1u 77u := pack tSession (pack tCart (pack tCred (pack refl (pack refl tGate))))
+def tSpend : Spend demoDomain tMandate 0u 1u 77u := pack tSession (pack tCart (pack tCred (pack refl (pack refl (pack tGate unit)))))
 
 -- The Le side of the Gate: a cart of one line (demoL0, the quantity 1u) has the total 100u, and 100u is not over the autoLimit 100u.
 def tLineSmall : Line demoDomain tMandate tSession := pack demoL0 (pack 1u (pack tProv (pack refl refl)))
@@ -291,4 +303,4 @@ def tSmallTotal : U256 := total demoDomain tMandate tSession tCartSmall
 
 def tGateLe : Gate demoDomain tMandate tSession tCartSmall 0u 77u := inl refl
 
-def bad : Spend demoDomain tMandate 600u 1u 77u := pack tSession (pack tCart (pack tCred (pack refl (pack refl (inr tConfirmed)))))
+def bad : Spend demoDomain tMandate 600u 1u 77u := pack tSession (pack tCart (pack tCred (pack refl (pack refl (pack (inr tConfirmed) unit)))))
