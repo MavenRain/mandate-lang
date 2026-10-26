@@ -6,6 +6,7 @@
 #include "front/core.h"
 
 #define ENTRY_PARAMS_MAX 32u /* 16 before sealed-lang S2 (R23): slashUsr takes 19 words */
+#define ENTRY_LIST_MAX 256u  /* the words of a List U256 entry argument, the last one (S7 Q-S7-2 (a)) */
 
 /* An entry: a program definition of type Nat, Flag, or a function of Nat and
    Flag arguments to a Nat or Flag result. */

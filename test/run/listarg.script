@@ -1,0 +1,21 @@
+-- A call script for examples/listarg.lang (S7 s1): payList with no list words (nil), with one word, and with three words in two orders.
+-- payList T x_0 ... x_(n-1) stores x_0 + 2 (x_1 + 2 (... + 2 (x_(n-1) + 2 T))). A scan from the head gives 19, not 25, for payList 1u 1u 2u 3u.
+-- pairFold folds xs with a Prod accumulator (S7 s2): the count + (x + 2 acc) + the last x read: 0 for nil, 21 for 1u 2u 3u, 17 for 3u 2u 1u.
+1 0x00000000000000000000000000000000000000bb payList 5u
+2 0x00000000000000000000000000000000000000bb lastSeen
+3 0x00000000000000000000000000000000000000bb payList 5u 7u
+4 0x00000000000000000000000000000000000000bb lastSeen
+5 0x00000000000000000000000000000000000000bb payList 1u 1u 2u 3u
+6 0x00000000000000000000000000000000000000bb lastSeen
+7 0x00000000000000000000000000000000000000bb payList 1u 3u 2u 1u
+8 0x00000000000000000000000000000000000000bb lastSeen
+9 0x00000000000000000000000000000000000000bb pairFold
+10 0x00000000000000000000000000000000000000bb pairFold 1u 2u 3u
+11 0x00000000000000000000000000000000000000bb pairFold 3u 2u 1u
+-- Q-S7-6: pairFold 2^256 - 1 then 1u. The fold reads 1u first, then x + 2 acc = (2^256 - 1) + 2 overflows u256Add in the fold slot.
+-- Thus the view traps. On the evm the call reverts with Trap().
+12 0x00000000000000000000000000000000000000bb pairFold 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffu 1u
+-- S7 s2 resume 4 (Q-S7-6 (a)): countFold gives only the count of the pairFold fold: 3u for 1u 2u 3u. For 2^256 - 1 then 1u the middle slot traps
+-- as in row 12. A trap in a slot is a trap of the fold, thus the view traps. On the evm the call reverts with Trap().
+13 0x00000000000000000000000000000000000000bb countFold 1u 2u 3u
+14 0x00000000000000000000000000000000000000bb countFold 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffu 1u

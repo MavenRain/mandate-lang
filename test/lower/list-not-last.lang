@@ -1,0 +1,6 @@
+-- REFUSE_LOWER (S7 s1, Q-S7-2 (a)): a List U256 entry argument that is not the last argument.
+state State := makeState (total : U256) (calls : U256)
+def init : State := makeState 0u 0u
+
+def payList : (env : Env) -> (s : State) -> (xs : List U256) -> (tag : U256) -> Option (Prod State (List Out)) :=
+  fun (env : Env) (s : State) (xs : List U256) (tag : U256) => some (pair (makeState (fold (fun (x : U256) (acc : U256) => u256Add x acc) tag xs) (calls s)) nil)

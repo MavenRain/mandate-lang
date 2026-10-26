@@ -1,0 +1,7 @@
+-- The request machine (S7, Q-S7-3 (a)): the cocell signature Machine of
+-- domain/domain.lang, with the closed label domain Req (a List U256). A
+-- guest program outside the kit cannot name nil or cons (rule R1), so this
+-- example is in examples/kit.txt. counter counts the requests. The step
+-- does not read the words of the request, so eps after two steps is two.
+def counter : Machine Size := mCorec Size Size (fun (s : Size) => s) (fun (s : Size) (r : Req) => szS s) sz0
+def counterAt2 : Size := eps Size (mStep Size (mStep Size counter nil) (cons 7u nil))

@@ -183,7 +183,10 @@ typedef struct {
   const Value *arg_types[ENTRY_PARAMS_MAX];
   const Value *result; /* a view: the type of its word */
   const Value *body;   /* an entry: Option (Prod State (List Out)); a view: one word; open in the levels */
+  int list_arg;        /* 1 when argument arg_count - 1 is a List U256 (S7 Q-S7-2 (a)) */
 } Residual;
+
+_Static_assert(IR_LIST_WORDS_MAX == ENTRY_LIST_MAX, "the List U256 bound of ir.h and of front/check.h");
 
 static uint32_t family_named(const Machine *m, const char *name) {
   uint32_t found = m->family_count;
@@ -194,6 +197,12 @@ static uint32_t family_named(const Machine *m, const char *name) {
 
 static int is_family_value(const Value *t, uint32_t family) {
   return t != NULL && val_is(t, OP_FAMILY) && t->inst == family;
+}
+
+/* 1 when T is List U256: an entry argument in the last position only (S7
+   Q-S7-2 (a)). */
+static int is_u256_list(const Value *t) {
+  return t != NULL && val_is(t, OP_LIST) && t->argc == 1u && val_is(t->args[0], OP_U256);
 }
 
 /* 1 when def I is an entry and 2 when it is a view (C-K4-10: the result is
@@ -216,6 +225,17 @@ static int residualize(Machine *m, uint32_t env, uint32_t out, uint32_t i, Resid
     t = closure_apply(m, t, val_var(m, r->arg_count + 2u));
     if (t == NULL) return -1;
     r->arg_count++;
+  }
+  if (t->kind == VAL_PI && r->arg_count < ENTRY_PARAMS_MAX && is_u256_list(t->dom)) {
+    r->arg_types[r->arg_count] = t->dom;
+    t = closure_apply(m, t, val_var(m, r->arg_count + 2u));
+    if (t == NULL) return -1;
+    r->arg_count++;
+    r->list_arg = 1;
+    if (t->kind == VAL_PI) {
+      diag_fail(m->diag, "REFUSE_LOWER", m->defs[i].name, "a List U256 argument must be the last argument");
+      return -1;
+    }
   }
   const Value *p = val_is(t, OP_OPTION) && val_is(t->args[0], OP_PROD) ? t->args[0] : NULL;
   int entry = p != NULL && is_family_value(p->args[0], m->state_family) && val_is(p->args[1], OP_LIST)
@@ -261,6 +281,7 @@ typedef struct {
   CurveMemo *memo;
   size_t memo_count;
   size_t memo_cap;
+  uint32_t list_level; /* the level of the List U256 argument, 0 = none (S7 Q-S7-2 (a)) */
 } Low;
 
 static void *low_alloc(Low *l, size_t size) {
@@ -329,6 +350,13 @@ static const IrExpr *ir_sload(Low *l, const IrExpr *slot) {
   return e;
 }
 
+/* The call data word at byte offset OFFSET (a List U256 argument, S7). */
+static const IrExpr *ir_calldata(Low *l, const IrExpr *offset) {
+  IrExpr *e = offset != NULL ? new_expr(l, IR_EXPR_CALLDATA) : NULL;
+  if (e != NULL) e->left = offset;
+  return e;
+}
+
 /* Word FIELD of the block at address BLOCK (a precompile output, S2). */
 static const IrExpr *ir_load(Low *l, const IrExpr *block, uint32_t field) {
   IrExpr *e = block != NULL ? new_expr(l, IR_EXPR_LOAD) : NULL;
@@ -359,9 +387,15 @@ static int field_of(const Value *v, uint32_t level, uint32_t *field) {
   return 1;
 }
 
+/* 1 when V is the level of the List U256 argument (S7 Q-S7-2 (a)). */
+static int is_list_arg(const Low *l, const Value *v) {
+  return v != NULL && v->kind == VAL_VAR && l->list_level != 0u && v->nat == l->list_level;
+}
+
 /* S4 R31: a point constructor is a family value as before. A path
    constructor residual (an interval argument that is not an end) and a
-   formal hcomp at a HIT (VAL_OP, not VAL_STUCK) are not words. */
+   formal hcomp at a HIT (VAL_OP, not VAL_STUCK) are not words.
+   S7 Q-S7-4 (a): a VAL_VAR at the List U256 level is that argument. */
 static const char *value_name(const Low *l, const Value *v) {
   if (v == NULL) return "no value";
   switch (v->kind) {
@@ -376,7 +410,7 @@ static const char *value_name(const Low *l, const Value *v) {
     case VAL_PI: return "a Pi type";
     case VAL_SIGMA: return "a Sigma type";
     case VAL_APP: return "an application of a variable (recursion that is not a List fold)";
-    case VAL_VAR: return "the Env or the state as one value";
+    case VAL_VAR: return is_list_arg(l, v) ? "a List U256 argument" : "the Env or the state as one value";
     case VAL_PLAM:
     case VAL_PAPP: return "a path";
     case VAL_IVAL: return "an interval";
@@ -591,6 +625,138 @@ static const IrExpr *lower_hash(Low *l, Stmts *b, const Value *v) {
                                    ir_binary(l, IR_OP_PAIR, w[2], w[3]));
 }
 
+/* must_trap for a fold step: a pair with a part that must trap is a trap,
+   as the eval fold (fold_acc, S7 Q-S7-6 (a)). */
+static int step_must_trap(const Value *v) {
+  if (must_trap(v)) return 1;
+  if (is_op(v, OP_PAIR) && v->argc == 2) return step_must_trap(v->args[0]) || step_must_trap(v->args[1]);
+  return is_op(v, OP_FLAG_IF) && v->argc == 3 && step_must_trap(v->args[1]) && step_must_trap(v->args[2]);
+}
+
+/* The words of the fold step S in slot order, for the shape of the
+   accumulator Z (S7 Q-S7-5 (a)): a right-nested Prod of words has one slot for
+   each word. A pair gives the words of its two parts. A flagIf with pairs as
+   arms gives one flagIf for each slot. */
+static int step_words(Low *l, const Value *s, const Value *z, const Value **out, size_t *n) {
+  if (!is_op(z, OP_PAIR) || z->argc != 2) {
+    out[*n] = s;
+    *n += 1u;
+    return 1;
+  }
+  if (s == NULL) return 0;
+  if (s->kind == VAL_TRAP) return step_words(l, s, z->args[0], out, n) && step_words(l, s, z->args[1], out, n);
+  if (is_op(s, OP_PAIR) && s->argc == 2)
+    return step_words(l, s->args[0], z->args[0], out, n) && step_words(l, s->args[1], z->args[1], out, n);
+  if (is_op(s, OP_FLAG_IF) && s->argc == 3) {
+    const Value *yes[ENTRY_PARAMS_MAX], *no[ENTRY_PARAMS_MAX];
+    size_t count = 0, other = 0;
+    if (!step_words(l, s->args[1], z, yes, &count) || !step_words(l, s->args[2], z, no, &other)) return 0;
+    for (size_t i = 0; i < count; i++) {
+      const Value *args[3] = {s->args[0], yes[i], no[i]};
+      out[*n + i] = val_op(l->m, s->kind, OP_FLAG_IF, s->inst, s->field, args, 3);
+      if (out[*n + i] == NULL) return 0;
+    }
+    *n += count;
+    return 1;
+  }
+  return refuse(l, s, "(a fold step that is not a pair)"), 0;
+}
+
+/* The accumulator of the fold body for the shape Z: slot i is the local
+   BASE + i (level BASE + i + 2). *SLOT counts the slots. */
+static const Value *acc_value(Low *l, const Value *z, uint32_t base, uint32_t *slot) {
+  if (!is_op(z, OP_PAIR) || z->argc != 2) {
+    uint32_t i = (*slot)++;
+    return val_var(l->m, base + i + 2u);
+  }
+  const Value *args[2];
+  args[0] = acc_value(l, z->args[0], base, slot);
+  args[1] = args[0] != NULL ? acc_value(l, z->args[1], base, slot) : NULL;
+  return args[1] != NULL ? val_op(l->m, z->kind, OP_PAIR, z->inst, z->field, args, 2) : NULL;
+}
+
+/* fold F Z over the List U256 argument (S7 Q-S7-2 (a)). Local N - 1 holds the
+   length n (evm_entry checks the list head), and item j is the call data word
+   at 4 + 32 N + 32 + 32 j. The scan reads item n-1 first: p := 4 + 32 N + 32 n,
+   then n times acc := F (word at p) acc and p := p - 32. This is the right
+   fold of lower_fold. Z can be a right-nested Prod of at most 32 words
+   (Q-S7-5 (a)): one local for each slot, from *BASE on. The step sets
+   temporary locals first, then the slots. The eval fold makes a pair with a
+   trapped part a trap (Q-S7-6 (a)), as the loop reverts at the first trap of
+   a slot: thus the step must trap when the accumulator traps
+   (step_must_trap). */
+static const IrStmt *lower_fold_arg(Low *l, Stmts *b, const Value *v, uint32_t *base) {
+  Stmts init = {NULL, 0, 0, b}, body = {NULL, 0, 0, &init};
+  const Value *zs[ENTRY_PARAMS_MAX], *ss[ENTRY_PARAMS_MAX];
+  size_t count = 0, n = 0;
+  if (point_word_count(v->args[1]) > ENTRY_PARAMS_MAX)
+    return refuse(l, v, "(a fold accumulator of more than 32 words)"), NULL;
+  if (!step_words(l, v->args[1], v->args[1], zs, &count)) return NULL;
+  uint32_t len = l->list_level - 2u, slot = 0;
+  uint64_t head = 4u + 32u * ((uint64_t)len + 1u);
+  uint32_t acc = l->locals, p = acc + (uint32_t)count, x = p + 1u, tmp = x + 1u;
+  l->locals = tmp + (count > 1u ? (uint32_t)count : 0u);
+  const IrExpr *last = ir_binary(l, IR_OP_ADD, ir_const(l, head), ir_binary(l, IR_OP_MUL, ir_local(l, len), ir_const(l, 32)));
+  for (size_t i = 0; i < count; i++)
+    if (!push_set(l, &init, acc + (uint32_t)i, lower_expr(l, &init, zs[i]))) return NULL;
+  if (!push_set(l, &init, p, last)) return NULL;
+  if (!push_set(l, &body, x, ir_calldata(l, ir_local(l, p)))) return NULL;
+  l->m->fuel = EVAL_FUEL_STEPS;
+  const Value *fx = apply_value(l->m, v->args[0], val_var(l->m, x + 2u));
+  const Value *accv = acc_value(l, v->args[1], acc, &slot);
+  const Value *step = fx != NULL && accv != NULL ? apply_value(l->m, fx, accv) : NULL;
+  if (!step_words(l, step, v->args[1], ss, &n)) return NULL;
+  for (size_t i = 0; i < count; i++)
+    if (!push_set(l, &body, count > 1u ? tmp + (uint32_t)i : acc, lower_expr(l, &body, ss[i]))) return NULL;
+  for (size_t i = 0; count > 1u && i < count; i++)
+    if (!push_set(l, &body, acc + (uint32_t)i, ir_local(l, tmp + (uint32_t)i))) return NULL;
+  if (block_may_trap(block_of(&init)) || block_may_trap(block_of(&body))) {
+    static const Value trapped = {.kind = VAL_TRAP};
+    l->m->fuel = EVAL_FUEL_STEPS;
+    const Value *strict = apply_value(l->m, fx, &trapped);
+    if (strict == NULL) return NULL;
+    if (!step_must_trap(strict))
+      return refuse(l, v, "(a fold that can discard a trapped accumulator)"), NULL;
+  }
+  if (!push_set(l, &body, p, ir_binary(l, IR_OP_SUB, ir_local(l, p), ir_const(l, 32)))) return NULL;
+  for (size_t i = 0; i < init.count; i++)
+    if (!push(l, b, init.items[i])) return NULL;
+  IrStmt *s = new_stmt(l, IR_STMT_REPEAT);
+  if (s == NULL) return NULL;
+  s->counter = l->locals++;
+  s->expr = ir_local(l, len);
+  s->body = block_of(&body);
+  *base = acc;
+  return push(l, b, s) ? s : NULL;
+}
+
+/* first and second of a fold over the List U256 argument (S7 Q-S7-5 (a)): the
+   local of the slot. One loop for each fold value in each entry, as
+   lower_curve. */
+static const IrExpr *lower_slot(Low *l, Stmts *b, const Value *v) {
+  Op path[ENTRY_PARAMS_MAX];
+  size_t depth = 0;
+  const Value *fold = v;
+  while ((is_op(fold, OP_FIRST) || is_op(fold, OP_SECOND)) && fold->argc == 1 && depth < ENTRY_PARAMS_MAX) {
+    path[depth++] = fold->op;
+    fold = fold->args[0];
+  }
+  if (!is_op(fold, OP_FOLD_LIST) || fold->argc != 3 || !is_list_arg(l, fold->args[2]))
+    return refuse(l, v, "at a word position"), NULL;
+  const Value *z = fold->args[1];
+  uint32_t slot = 0, base = 0;
+  for (size_t i = depth; i > 0; i--) {
+    if (!is_op(z, OP_PAIR) || z->argc != 2) return refuse(l, v, "at a word position"), NULL;
+    if (path[i - 1u] == OP_SECOND) slot += (uint32_t)point_word_count(z->args[0]);
+    z = z->args[path[i - 1u] == OP_SECOND ? 1u : 0u];
+  }
+  if (is_op(z, OP_PAIR)) return refuse(l, v, "at a word position"), NULL;
+  for (size_t i = 0; i < l->memo_count; i++)
+    if (l->memo[i].value == fold && block_has(b, l->memo[i].stmt)) return ir_local(l, l->memo[i].local + slot);
+  const IrStmt *s = lower_fold_arg(l, b, fold, &base);
+  return s != NULL && memo_add(l, fold, s, base) ? ir_local(l, base + slot) : NULL;
+}
+
 static const IrExpr *lower_expr(Low *l, Stmts *b, const Value *v) {
   uint32_t f;
   if (v != NULL && v->kind == VAL_TRAP) return push(l, b, new_stmt(l, IR_STMT_TRAP)) ? ir_const(l, 0) : NULL;
@@ -603,6 +769,7 @@ static const IrExpr *lower_expr(Low *l, Stmts *b, const Value *v) {
     e->word = w;
     return e;
   }
+  if (is_list_arg(l, v)) return refuse(l, v, "outside a fold"), NULL;
   if (v != NULL && v->kind == VAL_VAR && v->nat >= 2u) return ir_local(l, (uint32_t)v->nat - 2u);
   if (field_of(v, 1u, &f) && form_at(l, f) == FORM_WORD) return ir_sload(l, ir_const(l, f));
   if (field_of(v, 0u, &f) && l->env != NULL && f < l->env->field_count) {
@@ -626,6 +793,11 @@ static const IrExpr *lower_expr(Low *l, Stmts *b, const Value *v) {
   if (is_op(v, OP_FLAG_IF) && v->argc == 3) return lower_if_value(l, b, v);
   if (is_op(v, OP_FOLD_LIST) && v->argc == 3 && field_of(v->args[2], 1u, &f) && form_at(l, f) == FORM_LIST)
     return lower_fold(l, b, v, f);
+  if (is_op(v, OP_FOLD_LIST) && v->argc == 3 && is_list_arg(l, v->args[2])) {
+    uint32_t base = 0;
+    return lower_fold_arg(l, b, v, &base) != NULL ? ir_local(l, base) : NULL;
+  }
+  if ((is_op(v, OP_FIRST) || is_op(v, OP_SECOND)) && v->argc == 1) return lower_slot(l, b, v);
   for (size_t k = 0; v != NULL && v->argc == 2 && k < sizeof BINARY_OPS / sizeof BINARY_OPS[0]; k++)
     if (is_op(v, BINARY_OPS[k].op)) {
       const IrExpr *x = lower_expr(l, b, v->args[0]);
@@ -888,13 +1060,15 @@ static int lower_entries(Machine *m, const CtorInfo *ci, IrProgram *program, con
     int role = residualize(m, env, out, i, &r);
     if (role < 0) return 0;
     if (role == 0) continue;
-    Low l = {m, ci, env < m->family_count ? &m->ctors[m->families[env].first_ctor] : NULL, r.arg_count, m->defs[i].name, NULL, 0, 0};
+    Low l = {m, ci, env < m->family_count ? &m->ctors[m->families[env].first_ctor] : NULL, r.arg_count, m->defs[i].name, NULL, 0, 0,
+             r.list_arg ? r.arg_count + 1u : 0u};
     Stmts b = {NULL, 0, 0, NULL};
     IrScalar *params = r.arg_count > 0 ? low_alloc(&l, r.arg_count * sizeof *params) : NULL;
     if ((r.arg_count > 0 && params == NULL)
         || !(role == 2 ? lower_view(&l, &b, r.body) : lower_result(&l, &b, r.body)))
       return 0;
-    for (uint32_t k = 0; k < r.arg_count; k++) params[k] = scalar_of(r.arg_types[k]);
+    for (uint32_t k = 0; k < r.arg_count; k++)
+      params[k] = r.list_arg && k + 1u == r.arg_count ? IR_SCALAR_U256_LIST : scalar_of(r.arg_types[k]);
     IrScalar result = role == 2 ? scalar_of(r.result) : IR_SCALAR_NAT;
     IrFunc func = {m->defs[i].name, params, r.arg_count, result, l.locals, block_of(&b)};
     if (kinds != NULL) kinds[n] = role == 2 ? "view" : "entry";

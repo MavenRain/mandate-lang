@@ -96,6 +96,15 @@ else
   call trap mulV 2u 0x8000000000000000000000000000000000000000000000000000000000000000u
 fi
 
+# S7 s2 (Q-S7-1 (a), O138): the lines between BEGIN COPY and END COPY of
+# examples/mandate.lang equal lines 99 to 344 of examples/precompile.lang.
+awk '/^-- BEGIN COPY/ { f = 1; next } /^-- END COPY/ { f = 0 } f' examples/mandate.lang >"$tmp/copy.m"
+awk 'NR >= 99 && NR <= 344' examples/precompile.lang >"$tmp/copy.p"
+if ! cmp -s "$tmp/copy.m" "$tmp/copy.p"; then
+  echo "FAIL copy: examples/mandate.lang BEGIN COPY to END COPY differs from examples/precompile.lang lines 99 to 344" >&2
+  fail=$((fail + 1))
+fi
+
 rm -rf "$tmp"
 echo "precompile: $steps steps checked"
 echo "precompile gate: $fail failures"

@@ -94,7 +94,7 @@ state State := makeState (owner : Addr) (held : U256) history (earned : U256) (c
 
 The type of a definition gives its role. There is no keyword for a role.
 
-- An entry has the type `(env : Env) -> (s : State) -> (a1 : T1) -> ... -> Option (Prod State (List Out))`. Each `Ti` is `Nat`, `Flag`, `U256` or `Addr`. An entry can have zero arguments.
+- An entry has the type `(env : Env) -> (s : State) -> (a1 : T1) -> ... -> Option (Prod State (List Out))`. Each `Ti` is `Nat`, `Flag`, `U256` or `Addr`. An entry can have zero arguments. (S7) The last argument can also be `List U256`, a list of at most 256 words. `langc build` lowers it only as the list of a `fold`. When a `List U256` argument is not the last argument, the definition is a helper, and `langc build` gives REFUSE_LOWER.
 - An entry gives `none` to revert. It gives `some (pair s2 outs)` for the new state `s2` and the effects `outs`, in order.
 - A view has the same parameters as an entry. Its result type is `Nat`, `Flag`, `U256` or `Addr`.
 - All other definitions are helpers.
@@ -123,7 +123,7 @@ NOW CALLER NAME ARGS...
 
 - `NOW` is a `Nat` literal. `CALLER` is an `Addr` literal: `0x` and 40 hex digits. The call gets `makeEnv NOW CALLER 1337u RECEIVER` as `env` and the current state as `s`. A script has no field for `chainid` and `self`: the guest run uses the `evm run` defaults, the chain 1337 and RECEIVER = 0x0000000000000000000000007265636569766572 (the bytes "receiver"). The chain gate test/precompile.sh sets the chain id 1 in its prestate config (O62).
 - `NAME` is an entry or a view. A helper or an unknown name is not a call.
-- Each argument has the literal form of its parameter type: `Nat` (for example `7`), `Flag` (`0` or `1`), `U256` (decimal digits or `0x` and 1 or more hex digits, then `u`, for example `5u` or `0xffu`) or `Addr`. Upper case and lower case hex digits are both correct.
+- Each argument has the literal form of its parameter type: `Nat` (for example `7`), `Flag` (`0` or `1`), `U256` (decimal digits or `0x` and 1 or more hex digits, then `u`, for example `5u` or `0xffu`) or `Addr`. Upper case and lower case hex digits are both correct. A `List U256` argument is the 0 to 256 `U256` words after the other arguments: in `examples/listarg.lang`, `payList 1u 1u 2u 3u` gives `tag = 1u` and the list of `1u`, `2u` and `3u`, in this sequence.
 - Spaces, tabs and carriage returns separate the words.
 - If the first word of a line starts with `--`, the line is a comment. The run ignores comments and blank lines.
 - Each call starts with the full fuel limit.
@@ -168,7 +168,7 @@ The exit codes of `langc run`:
   - `RUN_ANSWER` (S6): an answer has a different OP or a wrong word count, or the script ends before the answer to an open operation.
   - `EVAL_ENTRY`: `NAME` is not an entry or a view.
   - `EVAL_FUEL`, `EVAL_DEPTH` and `EVAL_PRINT` stop the run, as in `langc eval`.
-- 2: a usage error, an `IO` error for the script, or `EVAL_ARGS` (a bad argument or an incorrect number of arguments), as in `langc eval`.
+- 2: a usage error, an `IO` error for the script, or `EVAL_ARGS` (a bad argument, an incorrect number of arguments, or more than 256 list words), as in `langc eval`.
 
 ## Maps (slice K4a0)
 
@@ -235,12 +235,12 @@ Dispatch (slice K4b):
 - All entries are nonpayable. A call with a value (CALLVALUE not zero) reverts with empty data.
 - Call data shorter than 4 bytes reverts with empty data.
 - The selector is CALLDATALOAD(0) shifted right by 224 bits. The dispatcher compares it with the selector of each entry (DUP1, PUSH4, EQ, JUMPI). An unknown selector goes into the REVERT block and reverts with empty data.
-- The selector of an entry is the first 4 bytes of the keccak256 of its signature `name(t1,...,tn)`. The ABI type names are: Nat is `uint64`, Flag is `bool`, U256 is `uint256` and Addr is `address`.
+- The selector of an entry is the first 4 bytes of the keccak256 of its signature `name(t1,...,tn)`. The ABI type names are: Nat is `uint64`, Flag is `bool`, U256 is `uint256` and Addr is `address`. List U256 is `uint256[]` (S7), for example `payList(uint256,uint256[])`.
 - Slice K4c puts the views in the dispatcher (C-K4-10). The selector of a view has the same form. A call to a view with a value also reverts.
 
 Decode (slice K4b):
 
-- The entry block removes the selector from the stack. Then it checks the size: call data shorter than 4 + 32 * N bytes (N arguments) reverts with empty data.
+- The entry block removes the selector from the stack. Then it checks the size: call data shorter than 4 + 32 * N bytes (N arguments) reverts with empty data. (S7) When the last argument is a `List U256`, its head word must be the offset 32 * N, the length word n at byte 4 + 32 * N must be 256 or less, and call data shorter than 4 + 32 * N + 32 + 32 * n bytes reverts. Each of these reverts has empty data. The `fold` reads the items from the call data (CALLDATALOAD), the last item first.
 - Argument k is the word at byte 4 + 32 * k of the call data. The block puts it in memory at byte 32 * k.
 - Dirty-bit rule: a Nat argument must be less than 2^64, a Flag argument must be 0 or 1, and an Addr argument must be less than 2^160. When a high bit is set, the call reverts with empty data. A U256 argument has no check.
 
@@ -287,7 +287,43 @@ The other refusals of `langc build` (exit 1, no output):
 
 `build/buildtool` checks the 37-byte runtime of a contract with no entry, the EIP-170 runtime limit in the two output modes, the EVM_SELECTOR refusal (before any output) and IO_WRITE with exit 2 for a closed stdout pipe.
 
+## The mandate contract (slice S7)
+
+`examples/mandate.lang` is the agent payment mandate. The owner gives a mandate to an agent. The agent spends for one session at one merchant, inside the cap of the mandate. The calldata words of `check` and `execute` are in xs order: the reverse of the read order of the decoder.
+
+- `grant` stores a new mandate and its merchant. It sets `spent` to 0 and `revoked` to flagNo. `revoke` sets `revoked` to flagYes. Only `self` can call `grant` and `revoke`. A call from a different address reverts.
+- `check` is a view. It gives the code of the first check that fails, else 0. The codes (O115): 0 ok, 1 NO_VIEW, 2 NO_PATH, 3 WRONG_MERCHANT, 4 NOT_CANONICAL, 5 WRONG_SESSION, 6 OVER_CAP, 7 EXPIRED, 8 NEED_CONFIRM, 9 REPLAY, 10 NO_POLICY, 11 BAD_CALLDATA, 12 NO_MANDATE. The order of the checks: NO_MANDATE, BAD_CALLDATA, NO_VIEW, NO_PATH, WRONG_MERCHANT, NOT_CANONICAL, WRONG_SESSION, OVER_CAP, EXPIRED, NEED_CONFIRM, REPLAY, NO_POLICY.
+- `execute` does the checks of `check`. When the code is 0, it adds the total to `spent`, marks the session in `used`, pays the total to the merchant with the token of the mandate and writes the event `Spent`. Else it reverts.
+
+Storage layout (the rule of `## EVM output (slice K4)`: field i of the state is at slot i):
+
+- Slots 0 to 11: `mOwner`, `mAgent`, `mViewer`, `mVault`, `mToken`, `mCap`, `mAutoLimit`, `mExpiry`, `mId`, `mPolicyVerifier`, `mPolicyId`, `mMerchant`.
+- Slot 12: `spent`. Slot 13: `used`, a `Map U256 U256` (the value of the session k is at slot keccak256(k . 13)). Slot 14: `revoked`.
+
+The Prod fold:
+
+- The decoder of `check` and `execute` is one `fold` over the calldata list (`List U256`) with a `Prod` accumulator of 30 words: pos bad sid mw root vv vr vs cv cr cs k fv fr fs lp lm lk lpr lmq lq ld lh ldir ch tot ck cn err ovf.
+- The lowering keeps each word of the accumulator in its own local. When the seed or the step can trap, the step applied to a trapped accumulator must trap. `step_must_trap` in `src/lower.c` accepts a trap, a `pair` with a part that must trap, and a `flagIf` with two branches that must trap. Else the build gives REFUSE_LOWER (a fold that can discard a trapped accumulator, `test/lower/fold-discard.lang`).
+- The evaluator gives the same trap: a `pair` with a trapped part is a trap (`fold_acc` in `src/front/eval.c`).
+
+The step weights (O137):
+
+- No slot can trap (Q-S7-6 (a)). `err` starts at 0. Each line adds the weight of its first failed check: NO_PATH 2^128, WRONG_MERCHANT 2^64, NOT_CANONICAL 1. Thus `check` gives NO_PATH when err is 2^128 or more, else WRONG_MERCHANT when err is 2^64 or more, else NOT_CANONICAL when err is not 0 (the list has fewer than 2^64 lines).
+- A line is on the path only when its quantity is maxQty or less. Price times quantity adds to `tot` only when the price and the quantity are 2^128 - 1 or less and the sum fits. Else `ovf` is 1 and the code is OVER_CAP.
+
+The EVM rows:
+
+- `test/evm.sh` runs `test/mandate-evm.script` on the EVM (`chain`). It is rows 1 to 30 of `test/run/mandate.script` with the token 0x..ee in each grant: on the EVM, the token 0x..05 is the modexp precompile. `test/evm.sh` puts the mock token of `test/diff.sh` at 0x..ee. The chain id is 1337, as in `langc run`.
+- For each step, `chain` checks the result, the storage of the receiver and the logs. Each pay line adds the Transfer LOG3 of the mock. The rows take about 3 minutes.
+- Rows 31 and 32 of `test/run/mandate.script` (the PQ row, O140) are not on the EVM.
+
+Gas and size (O142 and O143; the full table is in `## Gas of each chain step (C-K4-19)` of `CAPABILITY.md`):
+
+- The runtime is 22457 bytes (the EIP-170 limit is 24576: 2119 bytes free). The creation code is 22482 bytes (the EIP-3860 limit is 49152).
+- `test/run/mandate-gas.script` has 6 spends: Merkle depth 1, 2, 4 and 8 with 1 line, and 2 and 4 lines at depth 2. Each spend needs the confirm signature. The gas without the intrinsic gas: the grant 233442; at depth 8 with 1 line, `check` 233533 and `execute` 474914. Each extra Merkle level adds about 11500 to `check` and 23000 to `execute`. Each extra line adds about 58700 and 117400. The gate does not check the gas.
+
 ## Commands
+
 
 - `make check`: the tcc build with `-Wall -Werror`, the clang syntax pass, `test/gate.sh`, `test/run.sh`, `test/asm.sh`, `test/build.sh`, `test/dispatch.sh`, `test/evm.sh`, `test/mock.sh` and `test/diff.sh`. `test/asm.sh`, `test/build.sh`, `test/dispatch.sh`, `test/evm.sh`, `test/mock.sh` and `test/diff.sh` need geth `evm` on PATH.
 - `build/langc check FILE` and `build/langc eval FILE`: as in tcc-wasm.

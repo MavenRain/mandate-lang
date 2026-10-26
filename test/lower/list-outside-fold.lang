@@ -1,0 +1,6 @@
+-- REFUSE_LOWER (S7 s1): a List U256 entry argument outside a fold, here the value of a List field.
+state State := makeState (tally : U256) (paid : List U256)
+def init : State := makeState 0u nil
+
+def keep : (env : Env) -> (s : State) -> (tag : U256) -> (xs : List U256) -> Option (Prod State (List Out)) :=
+  fun (env : Env) (s : State) (tag : U256) (xs : List U256) => some (pair (makeState tag xs) nil)

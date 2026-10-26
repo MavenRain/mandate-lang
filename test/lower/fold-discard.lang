@@ -1,0 +1,6 @@
+-- REFUSE_LOWER (S7 s2 resume 4, Q-S7-6 (a)): a fold over the List U256 argument whose step can discard a trapped accumulator. For x = 0 the step gives 1u, not a value of acc.
+state State := makeState (tally : U256)
+def init : State := makeState 0u
+
+def discard : (env : Env) -> (s : State) -> (xs : List U256) -> U256 :=
+  fun (env : Env) (s : State) (xs : List U256) => fold (fun (x : U256) (acc : U256) => flagIf (u256Eq x 0u) 1u (u256Add x acc)) 0u xs

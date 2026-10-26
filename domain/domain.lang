@@ -57,6 +57,18 @@ def sExtend : (A : Type 0) -> (B : Type 0) -> (Stream A -> B) -> Stream A -> Str
   fun (A : Type 0) => fun (B : Type 0) => fun (f : Stream A -> B) => sCorec B (Stream A) f (sTail A)
 def sDuplicate : (A : Type 0) -> Stream A -> Stream (Stream A) :=
   fun (A : Type 0) => sExtend A (Stream A) (fun (x : Stream A) => x)
+-- The request machine (S7, Q-S7-3 (a)): the cofree comonad of the cocell
+-- signature with the observation eps and the labelled cofield mStep. The
+-- checker elaborates it as it elaborates Stream, with the destructors eps
+-- and mStep and the corecursor mCorec. eps is the value of the machine
+-- now, and mStep takes a request and gives the next machine. The name is
+-- mStep, not step: guest programs use step as a name (rule R4). A request is a
+-- List U256: the four words of Env, the selector, then the arguments.
+-- This file cannot name Env, because the contract prelude loads after it
+-- (O112). The label domain Req is closed data (rule R1). The differential
+-- of S7 runs each call script on `langc run` and on the EVM.
+def Req : Type 0 := List U256
+cofamily Machine (A : Type 0) := mCorec (eps : A) (mStep : Req -> Machine A)
 -- The parity quotient of Size (S3, design C 2b, USER ruling Q-S3-8 (a)):
 -- sizeEven s is sz0 for an even s and szS sz0 for an odd s, and parityEq
 -- is a path from parityOf a to parityOf b when a and b have the same

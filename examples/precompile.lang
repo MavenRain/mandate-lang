@@ -401,6 +401,211 @@ def tSmallTotal : U256 := total demoDomain tMandate tSession tCartSmall
 
 def tGateLe : Gate demoDomain tMandate tSession tCartSmall 0u 77u := inl refl
 
+-- The gas spends (S7 s3, O142, Q-S7-11 (a)) of test/run/mandate-gas.script, in its order. gMandate is tMandate with the token 0x..ee (the mock of test/diff.sh) and the cap 1000000u. Each spend has a new session, the merchant 0xaa, the claim hash 77u and the total 200u (more than the autoLimit 100u, thus Gate needs Confirmed). The signatures come from `cast wallet sign --no-hash` with the anvil key 0 (as for tSpend).
+def gMandate : Mandate := mandate 0x0000000000000000000000000000000000000001 0x0000000000000000000000000000000000000002 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 0x00000000000000000000000000000000000000ee 1000000u 100u 2000000000u 2u 0x0000000000000000000000000000000000000000 0u
+
+-- gd1Spend: the session 101u, 1 line at the Merkle depth 1, the spent amount 0u before it.
+def gd1L0 : Listing := listing 0x00000000000000000000000000000000000000aa 11u 200u 5u
+
+def gd1Root : Hash := merkle 1 (listingHash gd1L0) (cons 21u nil)
+
+def gd1ViewSig : Sig := sig 27 0x57abc29296f13ab4baa61b0b079fe84511dab4838012153590139e4324783949u 0x1c2e8f442418d69274df20b1a50eb211f5e7c9bd13d790792477495a5ebc1dc1u
+
+def gd1CredSig : Sig := sig 27 0xddace8998fa92330514bd07b78fdbfcd2decbab2fd070c64bcd88d0f22fb9072u 0x0122ad19f9b8da17dd8d4ee16bab8e8690b8d3febb0ef14d258411de9e42e006u
+
+def gd1ConfirmSig : Sig := sig 27 0x33fd1c2be2a32e30da8cd2d21c7e52448cabf4bc2d4fd6bf1d87c883ea620bd4u 0x2dbca4d5de3e4e6b5e9775c75aa82d6183bc8704c842a32c12ba471ccba98a59u
+
+def gd1View : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack gd1Root (pack gd1ViewSig refl)
+
+def gd1Session : Session demoDomain gMandate := pair 101u (pair 0x00000000000000000000000000000000000000aa gd1View)
+
+def gd1Prov0 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gd1View gd1L0 := pack 1 (pack (cons 21u nil) refl)
+
+def gd1Line0 : Line demoDomain gMandate gd1Session := pack gd1L0 (pack 1u (pack gd1Prov0 (pack refl refl)))
+
+def gd1Cart : Cart demoDomain gMandate gd1Session := pack (cons gd1Line0 nil) refl
+
+def gd1Cred : Cred demoDomain gMandate gd1Session := pack gd1CredSig refl
+
+def gd1Confirmed : Confirmed demoDomain gMandate gd1Session gd1Cart 77u := pack gd1ConfirmSig refl
+
+def gd1Gate : Gate demoDomain gMandate gd1Session gd1Cart 0u 77u := inr gd1Confirmed
+
+def gd1Spend : Spend demoDomain gMandate 0u 3u 77u := pack gd1Session (pack gd1Cart (pack gd1Cred (pack refl (pack refl gd1Gate))))
+
+-- gd2Spend: the session 102u, 1 line at the Merkle depth 2, the spent amount 200u before it.
+def gd2L0 : Listing := listing 0x00000000000000000000000000000000000000aa 12u 200u 5u
+
+def gd2Root : Hash := merkle 2 (listingHash gd2L0) (cons 22u (cons 23u nil))
+
+def gd2ViewSig : Sig := sig 27 0xe2ff958519cedd126c488b916051e11e1bdf376c3feb5662cb9f10a2febe3fcau 0x4279b5d45f8ffa93342f82557673fd63a05f912b3395ae2d0d937a3e4d1f106du
+
+def gd2CredSig : Sig := sig 28 0x4011d52ab91092c5812313d8dafb6cd9513556363807e0c451eb0f27b00e6192u 0x2d347ccab1083a29e1a47364b6b83255bea6e2b098dabdb3b171ac92a38dbbafu
+
+def gd2ConfirmSig : Sig := sig 28 0x8d9ab34bbe7801acf9bb02521ea2c2b01a50e5d6e119fcadb3bb092ecafddd46u 0x3fd207a63cbc1a95a28f88a7ff8a9e192ef7c1961203fc25f2801c187f1967ecu
+
+def gd2View : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack gd2Root (pack gd2ViewSig refl)
+
+def gd2Session : Session demoDomain gMandate := pair 102u (pair 0x00000000000000000000000000000000000000aa gd2View)
+
+def gd2Prov0 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gd2View gd2L0 := pack 2 (pack (cons 22u (cons 23u nil)) refl)
+
+def gd2Line0 : Line demoDomain gMandate gd2Session := pack gd2L0 (pack 1u (pack gd2Prov0 (pack refl refl)))
+
+def gd2Cart : Cart demoDomain gMandate gd2Session := pack (cons gd2Line0 nil) refl
+
+def gd2Cred : Cred demoDomain gMandate gd2Session := pack gd2CredSig refl
+
+def gd2Confirmed : Confirmed demoDomain gMandate gd2Session gd2Cart 77u := pack gd2ConfirmSig refl
+
+def gd2Gate : Gate demoDomain gMandate gd2Session gd2Cart 200u 77u := inr gd2Confirmed
+
+def gd2Spend : Spend demoDomain gMandate 200u 5u 77u := pack gd2Session (pack gd2Cart (pack gd2Cred (pack refl (pack refl gd2Gate))))
+
+-- gd4Spend: the session 104u, 1 line at the Merkle depth 4, the spent amount 400u before it.
+def gd4L0 : Listing := listing 0x00000000000000000000000000000000000000aa 13u 200u 5u
+
+def gd4Root : Hash := merkle 5 (listingHash gd4L0) (cons 41u (cons 42u (cons 43u (cons 44u nil))))
+
+def gd4ViewSig : Sig := sig 28 0x482695a79754559beac1795336235447a7572e72d54f0f84b8677fe4a6b16000u 0x035c5d8a51440c023ad08d27d9f9713c735597a8cced91375763fc31177146a8u
+
+def gd4CredSig : Sig := sig 27 0x9972d9c54b9af3982268258b2356a89dbec89cd8685e211cf7e06bd18d358018u 0x196e3bbb70ed7fb7f71ecb73608d44bb87b0cb1b85859c4a1ed158ce0cc64951u
+
+def gd4ConfirmSig : Sig := sig 28 0x39895d7cddd0e08faf0afa2beb46ed2f8811e3ff6122599e36b80e0a80d7b83cu 0x4a874061a88a040fc09dd6dae83c40518f34e6b6a6a53859cde18c0ab79dd60fu
+
+def gd4View : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack gd4Root (pack gd4ViewSig refl)
+
+def gd4Session : Session demoDomain gMandate := pair 104u (pair 0x00000000000000000000000000000000000000aa gd4View)
+
+def gd4Prov0 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gd4View gd4L0 := pack 5 (pack (cons 41u (cons 42u (cons 43u (cons 44u nil)))) refl)
+
+def gd4Line0 : Line demoDomain gMandate gd4Session := pack gd4L0 (pack 1u (pack gd4Prov0 (pack refl refl)))
+
+def gd4Cart : Cart demoDomain gMandate gd4Session := pack (cons gd4Line0 nil) refl
+
+def gd4Cred : Cred demoDomain gMandate gd4Session := pack gd4CredSig refl
+
+def gd4Confirmed : Confirmed demoDomain gMandate gd4Session gd4Cart 77u := pack gd4ConfirmSig refl
+
+def gd4Gate : Gate demoDomain gMandate gd4Session gd4Cart 400u 77u := inr gd4Confirmed
+
+def gd4Spend : Spend demoDomain gMandate 400u 7u 77u := pack gd4Session (pack gd4Cart (pack gd4Cred (pack refl (pack refl gd4Gate))))
+
+-- gd8Spend: the session 108u, 1 line at the Merkle depth 8, the spent amount 600u before it.
+def gd8L0 : Listing := listing 0x00000000000000000000000000000000000000aa 14u 200u 5u
+
+def gd8Root : Hash := merkle 85 (listingHash gd8L0) (cons 81u (cons 82u (cons 83u (cons 84u (cons 85u (cons 86u (cons 87u (cons 88u nil))))))))
+
+def gd8ViewSig : Sig := sig 27 0x0e197b7bed842f6018c74655f23b037d5a901e40a20938d4b9334beb1d6f9b42u 0x7b08d1b8355a550a31f1a5d01cb1f2edde4e3bba5dd0cd6c18903a98367cfe1au
+
+def gd8CredSig : Sig := sig 27 0xa5bed91f85e57fde6c92aeeb73bd29365a838a8e7a3f60f5e23b7063fd647a97u 0x392f109c2259f99139e38393fed0f1dde96ce533b86b7446188638cfdf7729f1u
+
+def gd8ConfirmSig : Sig := sig 28 0x49e60688905884a71b60ad61c7bd8b900e396fe2167fd80a8f97f2230c3cf75du 0x7d56fc37ef9be54c0d09759b8fb04427002484c3726956029769c63dc1594663u
+
+def gd8View : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack gd8Root (pack gd8ViewSig refl)
+
+def gd8Session : Session demoDomain gMandate := pair 108u (pair 0x00000000000000000000000000000000000000aa gd8View)
+
+def gd8Prov0 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gd8View gd8L0 := pack 85 (pack (cons 81u (cons 82u (cons 83u (cons 84u (cons 85u (cons 86u (cons 87u (cons 88u nil)))))))) refl)
+
+def gd8Line0 : Line demoDomain gMandate gd8Session := pack gd8L0 (pack 1u (pack gd8Prov0 (pack refl refl)))
+
+def gd8Cart : Cart demoDomain gMandate gd8Session := pack (cons gd8Line0 nil) refl
+
+def gd8Cred : Cred demoDomain gMandate gd8Session := pack gd8CredSig refl
+
+def gd8Confirmed : Confirmed demoDomain gMandate gd8Session gd8Cart 77u := pack gd8ConfirmSig refl
+
+def gd8Gate : Gate demoDomain gMandate gd8Session gd8Cart 600u 77u := inr gd8Confirmed
+
+def gd8Spend : Spend demoDomain gMandate 600u 9u 77u := pack gd8Session (pack gd8Cart (pack gd8Cred (pack refl (pack refl gd8Gate))))
+
+-- gc2Spend: the session 202u, 2 lines at the Merkle depth 2, the spent amount 800u before it.
+def gc2L0 : Listing := listing 0x00000000000000000000000000000000000000aa 21u 100u 5u
+
+def gc2L1 : Listing := listing 0x00000000000000000000000000000000000000aa 22u 100u 5u
+
+def gc2Root : Hash := merkle 0 (listingHash gc2L0) (cons 33u (cons (listingHash gc2L1) nil))
+
+def gc2ViewSig : Sig := sig 27 0x44d3bce44bf78316367840ba46bf287d2dcd69b8cee3172737d14c14c12cc0efu 0x594d95eeb3bcde30431fb1cf19bdcde63bbf112a060a42d214628d733e992ee7u
+
+def gc2CredSig : Sig := sig 27 0x0ce2820d8865fe995b5e556b7356189bb4f8737ff3c65105e7d70b3a361d1301u 0x55a6509f73c3e10a5ed321c7e4317f3a52c35a64b045bdcc41480d4d42382ee0u
+
+def gc2ConfirmSig : Sig := sig 27 0xc15efc6e3261731272976bfc3501c10ff1fb0cd246586d7010c4249e292a2d07u 0x1e3a76c1b5931b09c39e593d2457607b6ef108a34da991b12ae8fa88b51ad52bu
+
+def gc2View : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack gc2Root (pack gc2ViewSig refl)
+
+def gc2Session : Session demoDomain gMandate := pair 202u (pair 0x00000000000000000000000000000000000000aa gc2View)
+
+def gc2Prov0 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gc2View gc2L0 := pack 0 (pack (cons 33u (cons (listingHash gc2L1) nil)) refl)
+
+def gc2Line0 : Line demoDomain gMandate gc2Session := pack gc2L0 (pack 1u (pack gc2Prov0 (pack refl refl)))
+
+def gc2Prov1 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gc2View gc2L1 := pack 1 (pack (cons 33u (cons (listingHash gc2L0) nil)) refl)
+
+def gc2Line1 : Line demoDomain gMandate gc2Session := pack gc2L1 (pack 1u (pack gc2Prov1 (pack refl refl)))
+
+def gc2Cart : Cart demoDomain gMandate gc2Session := pack (cons gc2Line0 (cons gc2Line1 nil)) refl
+
+def gc2Cred : Cred demoDomain gMandate gc2Session := pack gc2CredSig refl
+
+def gc2Confirmed : Confirmed demoDomain gMandate gc2Session gc2Cart 77u := pack gc2ConfirmSig refl
+
+def gc2Gate : Gate demoDomain gMandate gc2Session gc2Cart 800u 77u := inr gc2Confirmed
+
+def gc2Spend : Spend demoDomain gMandate 800u 11u 77u := pack gc2Session (pack gc2Cart (pack gc2Cred (pack refl (pack refl gc2Gate))))
+
+-- gc4Spend: the session 204u, 4 lines at the Merkle depth 2, the spent amount 1000u before it.
+def gc4L0 : Listing := listing 0x00000000000000000000000000000000000000aa 31u 50u 5u
+
+def gc4L1 : Listing := listing 0x00000000000000000000000000000000000000aa 32u 50u 5u
+
+def gc4L2 : Listing := listing 0x00000000000000000000000000000000000000aa 33u 50u 5u
+
+def gc4L3 : Listing := listing 0x00000000000000000000000000000000000000aa 34u 50u 5u
+
+def gc4N0 : Hash := merkle 0 (listingHash gc4L0) (cons (listingHash gc4L1) nil)
+
+def gc4N1 : Hash := merkle 0 (listingHash gc4L2) (cons (listingHash gc4L3) nil)
+
+def gc4Root : Hash := merkle 0 (listingHash gc4L0) (cons gc4N1 (cons (listingHash gc4L1) nil))
+
+def gc4ViewSig : Sig := sig 28 0x980edc3369bc7539fefb7314e8fe8e5b6e4f0cbf4ce3d621e3122e18c3a6a796u 0x41bcd552f0c5d8f1817bb35abd62b32286f8db162154458729ab5c285808e835u
+
+def gc4CredSig : Sig := sig 27 0xf02e1c4cd23f8e5b29ecf33e096bda3b84c0c04d2b0b58d89cad267f8ca37812u 0x14460fc993ea4a759408b2dc698025e087611919458f508c05831b3333f4b88du
+
+def gc4ConfirmSig : Sig := sig 28 0x6b166d6888ce7d9b19a3fb9a8ec8524d765e7d3328c3efeba2e8be41f62d65e7u 0x6855074bc22f3e9ede88ec9b60b70fefbb14e200840ed3ed628a38e9e016175eu
+
+def gc4View : ViewAt demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u := pack gc4Root (pack gc4ViewSig refl)
+
+def gc4Session : Session demoDomain gMandate := pair 204u (pair 0x00000000000000000000000000000000000000aa gc4View)
+
+def gc4Prov0 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gc4View gc4L0 := pack 0 (pack (cons gc4N1 (cons (listingHash gc4L1) nil)) refl)
+
+def gc4Line0 : Line demoDomain gMandate gc4Session := pack gc4L0 (pack 1u (pack gc4Prov0 (pack refl refl)))
+
+def gc4Prov1 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gc4View gc4L1 := pack 1 (pack (cons gc4N1 (cons (listingHash gc4L0) nil)) refl)
+
+def gc4Line1 : Line demoDomain gMandate gc4Session := pack gc4L1 (pack 1u (pack gc4Prov1 (pack refl refl)))
+
+def gc4Prov2 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gc4View gc4L2 := pack 2 (pack (cons gc4N0 (cons (listingHash gc4L3) nil)) refl)
+
+def gc4Line2 : Line demoDomain gMandate gc4Session := pack gc4L2 (pack 1u (pack gc4Prov2 (pack refl refl)))
+
+def gc4Prov3 : Prov demoDomain 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 2u gc4View gc4L3 := pack 3 (pack (cons gc4N0 (cons (listingHash gc4L2) nil)) refl)
+
+def gc4Line3 : Line demoDomain gMandate gc4Session := pack gc4L3 (pack 1u (pack gc4Prov3 (pack refl refl)))
+
+def gc4Cart : Cart demoDomain gMandate gc4Session := pack (cons gc4Line1 (cons gc4Line0 (cons gc4Line3 (cons gc4Line2 nil)))) refl
+
+def gc4Cred : Cred demoDomain gMandate gc4Session := pack gc4CredSig refl
+
+def gc4Confirmed : Confirmed demoDomain gMandate gc4Session gc4Cart 77u := pack gc4ConfirmSig refl
+
+def gc4Gate : Gate demoDomain gMandate gc4Session gc4Cart 1000u 77u := inr gc4Confirmed
+
+def gc4Spend : Spend demoDomain gMandate 1000u 13u 77u := pack gc4Session (pack gc4Cart (pack gc4Cred (pack refl (pack refl gc4Gate))))
+
 -- The wire operations keep the word responses of Q-S6-1 (a). The typed
 -- show and lookup below assemble and check the signed responses.
 def showWord : (B : Type 0) -> (w : U256) -> (next : U256 -> IO B) -> IO B :=

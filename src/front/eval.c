@@ -873,7 +873,26 @@ static const Value *reduce_fold_nat(Machine *m, const Value *const *a, uint32_t 
   return acc;
 }
 
-/* fold f z xs: the right fold. The end of the list is folded first. */
+/* The trapped part of a pair accumulator, else NULL (S7 Q-S7-6 (a)). */
+static const Value *pair_trap(const Value *v) {
+  const Value *t;
+  if (v == NULL || v->kind == VAL_TRAP)
+    return v;
+  if (!val_is(v, OP_PAIR) || v->argc != 2)
+    return NULL;
+  t = pair_trap(v->args[0]);
+  return t != NULL ? t : pair_trap(v->args[1]);
+}
+
+/* A fold accumulator with a trapped part is that trap (S7 Q-S7-6 (a)): the
+   loop of the List U256 argument reverts at the first trap of a slot. */
+static const Value *fold_acc(const Value *acc) {
+  const Value *t = pair_trap(acc);
+  return t != NULL ? t : acc;
+}
+
+/* fold f z xs: the right fold. The end of the list is folded first. The
+   accumulator goes through fold_acc. */
 static const Value *reduce_fold_list(Machine *m, const Value *const *a) {
   const Value *acc = NULL;
   Spine s;
@@ -888,11 +907,11 @@ static const Value *reduce_fold_list(Machine *m, const Value *const *a) {
     acc = make(m, VAL_STUCK, OP_FOLD_LIST, 0, 3, a[0], a[1], s.tail);
     break;
   case SCRUT_VALUE:
-    acc = val_is(s.tail, OP_NIL) ? a[1] : internal(m, "a list that does not end in nil");
+    acc = val_is(s.tail, OP_NIL) ? fold_acc(a[1]) : internal(m, "a list that does not end in nil");
     break;
   }
   for (i = s.count; i > 0 && acc != NULL; i--)
-    acc = apply_value(m, apply_value(m, a[0], s.cells[i - 1u]->args[0]), acc);
+    acc = fold_acc(apply_value(m, apply_value(m, a[0], s.cells[i - 1u]->args[0]), acc));
   return acc;
 }
 

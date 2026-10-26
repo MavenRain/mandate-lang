@@ -49,6 +49,18 @@ input() {
   _sig="$2($(types "$1" "$2"))"
   shift 2
   _words=''
+  # A uint256[] last parameter (S7 s1): the head words, the offset word 32 N, the length n, then the n items.
+  case $_sig in
+    *'uint256[])')
+      _n=$(printf '%s\n' "$_sig" | awk -F, '{ print NF }')
+      _k=1
+      while [ "$_k" -lt "$_n" ]; do
+        _words=$_words$(pad "$(word "$1")")
+        shift
+        _k=$((_k + 1))
+      done
+      _words=$_words$(pad "$(printf '%x' $((32 * _n)))")$(pad "$(printf '%x' $#)") ;;
+  esac
   for _a in "$@"; do
     _words=$_words$(pad "$(word "$_a")")
   done

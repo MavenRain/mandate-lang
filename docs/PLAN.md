@@ -122,6 +122,33 @@ questions):
 - 2026-10-25 (S6 staged review): fixed the printed Flag motive ambiguity
   (O108) and added the typed viewer and credential responses required by
   4.3 and 4.6 (O109). The word transport of Q-S6-1 (a) is retained.
+- 2026-10-25 (S7 kickoff, claude7): base 17d50a4, the USER S6 commit
+  (tree 4e66bc61). It adds the S6 staged review (O108, O109: 8 files) to
+  the staged tree d47c84eb, thus the S7 items start at O110. The S7
+  plan: the sessions s1 to s4 (O110), the facts and the gaps O111 to
+  O118, the questions Q-S7-1 to Q-S7-3 (section 11).
+  The USER RULED (2026-10-25): the base 17d50a4 is accepted (O111);
+  Q-S7-1 (a), Q-S7-2 (a) and Q-S7-3 (a), each as RECOMMENDED.
+- 2026-10-25 (S7 s1, claude7): `Machine` and `Req` in domain/domain.lang
+  (the cofield is `mStep`, O119), the kit example examples/machine.lang
+  (O120), a last `List U256` entry argument (Q-S7-2 (a): a CALLDATALOAD
+  fold, O121 to O124), the `uint256[]` ABI fix (O125) and
+  examples/listarg.lang with its rows (O126). The USER RULED Q-S7-4 (a)
+  (2026-10-25, O127). s1 DONE (O128); the S7 row stays IN PROGRESS.
+  S7 s2 part 1: examples/mandate.lang part 1 (O129, O130). The USER
+  RULED Q-S7-5 (a) (2026-10-25, O131): the kit lowers a Prod fold
+  accumulator (O132), and Q-S7-6 (a) (2026-10-25, O133): a trap in a
+  part of a Prod fold accumulator is a trap of the fold. The USER RULED
+  Q-S7-7 (a) (2026-10-25, O134): the decoder needs no U256 to Nat kit
+  op. The USER RULED Q-S7-8 (2026-10-25, O135): (i) (b), the merchant
+  address is a state word; (ii) (a), qty over maxQty gives NO_PATH.
+  S7 s2 DONE (O136 to O140): the decoder, the step weights, the evm
+  rows and the 25 mutants KILLED; the S7 row stays IN PROGRESS.
+- 2026-10-26 (S7 close, claude7): S7 s3 DONE (O141 to O143) and s4,
+  the close (O144). The final gate gives EXIT 0, the same as the s3
+  resume 1b gate. The mutants of S7 ran in s2 (O140, 25 of 25
+  KILLED). S7 is DONE and STAGED; the USER commits. The next slice is
+  S8.
 
 ## 2. The reading of R1
 
@@ -341,9 +368,9 @@ codata Machine (A : U)
 ```
 
 `Machine` is the cofree comonad over `Req -> -`, a CC. `eps` gives the
-state (the mandate, `spent`, the used session numbers, `revoked`). `step`
+state (the mandate, `spent`, the used session numbers, `revoked`). `mStep`
 runs one request. The agent program is a CM term and the checker is a CC
-term. A run interprets `submit` by one `step` and the other operations by
+term. A run interprets `submit` by one `mStep` and the other operations by
 the script. The guest run and the EVM run of one script give the same
 state (the differential law of section 5).
 
@@ -538,7 +565,7 @@ call (S9).
 | S4 | Base signature: `Hash`, `Sig`, `signer`, EIP-712 digests, `Env` `chainid` and `self`, the byte form of `keccak` (O12) | DONE (2026-10-24): base 68efac0. `Env` `chainid` and `self` (CHAINID, ADDRESS); `hash712`, `hash3` and `hash4` (Q-S4-1 (a), O67); `Hash`, `Sig`, `signer` and `signedAs` (examples/precompile.lang); `mailHash` gives the struct hash of the EIP-712 Mail example by `hash3` and `hash4`; formers/FORMERS.md F16 to F19 and the Fin kit note (Q-S3-1 (a); the bridge-lang section 5 has no F16 to F19 rows); gate EXIT 0: evals 144, precompile 19 steps; O61 stays OPEN; O62 to O67 |
 | S5 | `Mandate`, `Listing`, `View`, `Prov` (Merkle path), `Line`, `Cart`, `cartHash`; the provenance refusals | DONE 2026-10-25 (s1 kickoff 2026-10-24; s1 DONE 2026-10-24 without `merkle2V`, gate counts examples 41, check refusals 171, evals 148, precompile 21 steps, the other S4 counts the same; Q-S5-5 RULED (b); s1b DONE 2026-10-25: `flagIf` is the word select (O79), `side` lowers, 3 `merkle2V` rows (O80), gate counts precompile 24 steps, the other s1 counts the same; s2 DONE 2026-10-25: `Mandate`, `View`, `Session`, `Line`, `Cart`, `cartHash` and 4 guest refusals (PATH_END), Q-S5-6 RULED (a) (the sorted `List`), Q-S5-7 RULED (a) (`def Le`), gate counts check refusals 175, evals 154, the other s1b counts the same, O81 to O84): base 65527a8; three sessions: s1 `Listing`, `listingHash`, `merkle`, `Prov`, `Signed`, `View`; s2 `Line`, `Cart`, `cartHash`, `Mandate`; the close; Q-S5-1 to Q-S5-4 RULED (a); O68 to O84; close DONE 2026-10-25: gate EXIT 0 (mandate-lang-work/S5-close-gate.log), the s2 counts: examples 41, parse refusals 19, check refusals 175, kit-only refusals 19, evals 154, runs 6, run refusals 10, asmtool 8 of 8, builds 3, lower refusals 15, checks 32, dispatch 20, evm steps 43, precompile 24 steps, mock 13 rows, diff 15 rows, emit 24 |
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
-| S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | PLANNED |
+| S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, STAGED (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | PLANNED |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | PLANNED |
 | S10 | Mutants and close | PLANNED |
@@ -593,7 +620,8 @@ call (S9).
 - O14: the indexed families have no type parameter, so R1 does not limit
   them (2.2). Builder call.
 - O15: the Merkle depth is at most 8 (256 listings in one view). S7
-  measures the gas and can change the bound. Builder call.
+  measures the gas and can change the bound. Builder call. S7 s3
+  (O143): the bound 8 stays.
 - O16: one spend per session number (`used` is a `Map U256 U256`).
   Builder call.
 - O17: `price * q`, `total` and `spent + total` refuse an overflow; `cap`
@@ -1064,6 +1092,550 @@ call (S9).
   and an invalid v. The fifteen request words match independent
   `cast keccak` vectors. Raw constructors remain the wire interface;
   the chain decoder remains the boundary check of 4.8.
+- O110 (S7 kickoff): the sessions of S7.
+  - s1: `Machine` and `Req` in domain/domain.lang (Q-S7-3), the cocell
+    rows and the evals of the guest terms (`eps`, `mStep`, a machine from
+    a step function by unfold). When Q-S7-2 is (a): the kit change for an
+    entry argument of type `List U256`, its lowering, the `langc run`
+    script form, the lower and the build rows.
+  - s2: the contract of section 7 (Q-S7-1): the state, `grant`,
+    `revoke`, the decoder, the view `check` and `execute`. One refusal
+    row for each chain refusal of 4.8 and of O115, but not `NO_POLICY`
+    with a verifier call (S9, O117). `langc build` of the contract.
+  - s3: the differential (Q-S7-3), the gas rows and the size rows
+    (O114), docs/host/CAPABILITY.md and docs/host/README.md.
+  - s4: the S7 close: the mutants of the decoder and of each refusal
+    row, the gate, the commit message.
+- O111 (S7 kickoff, step 0): HEAD 17d50a4 (the USER S6 commit, tree
+  4e66bc61, Signed-off-by), the status clean. The fresh gate
+  (mandate-lang-work/S7-kickoff-step0-gate.log): EXIT 0, the 48 sorted
+  lines the same as S6-close-gate.log. The 8 files of the staged review
+  do not change the counts. The USER accepted 17d50a4 as the S7 base.
+- O112 (S7 kickoff, survey): the kit contract form. A contract is a
+  guest program: a `state` declaration and entries `def e : (env : Env)
+  -> (s : State) -> ARGS -> Option (Prod State (List Out))`
+  (examples/contract.lang). A view gives one word (C-K4-10). `langc
+  build` lowers them (src/lower.c, src/evm.c) with the ABI selector
+  dispatch (src/evm.c:97 and :463). The contract writer of bridge-lang
+  is dropped (O34, Q-S2-1). examples/precompile.lang has its own state
+  (`makeState (sigs : List U256)`) and the entry `sign`. The contract
+  prelude (`Env`, `Out`) loads after domain/domain.lang
+  (src/front/contract.c:1), thus domain/domain.lang cannot name `Env`.
+- O113 (S7 kickoff, survey): an entry argument is a word only (Nat,
+  Flag, U256, Addr; src/lower.c:29 and :214), at most 32 of them
+  (ENTRY_PARAMS_MAX, src/front/check.h:8). The state can hold a `List`
+  and a `Map` of words (FORM_LIST and FORM_MAP, src/lower.c:35 and :36).
+  A spend with 1 cart line and a Merkle path of depth 2 needs about 21
+  words (the session 3, three signatures 9, the claim hash 1, the line
+  8); each more line needs about 8 more words, and more at depth 8. Thus
+  a cart of 3 lines, or 1 line at depth 8, does not fit in 32 word
+  arguments (Q-S7-2).
+- O114 (S7 kickoff, survey and builder call): the size limits exist:
+  ASM_RUNTIME_MAX 24576 (EIP-170) and ASM_CAPACITY 49152 (EIP-3860) in
+  src/asm.h:13 and :14. `langc build` refuses with EVM_SIZE
+  (src/lower.c:163), and test/buildtool.c checks the runtime limit. The
+  gas rows of the kit use `evm run --statdump` (C-K4-19 of
+  docs/host/CAPABILITY.md). The S7 rows: the gas of `check` and of
+  `execute` for the honest spend at Merkle depth 1, 2, 4 and 8 and for
+  carts of 1, 2 and 4 lines; the size of the runtime and of the creation
+  code. O15: the bound 8 stays, unless the gas gives a reason; the
+  builder records the values.
+- O115 (S7 kickoff, builder call): the refusal codes are words. 0 is
+  ok. Then the rows of 4.8 in order: NO_VIEW 1, NO_PATH 2,
+  WRONG_MERCHANT 3, NOT_CANONICAL 4, WRONG_SESSION 5, OVER_CAP 6,
+  EXPIRED 7, NEED_CONFIRM 8, REPLAY 9, NO_POLICY 10. Two more codes:
+  BAD_CALLDATA 11 (the calldata does not decode) and NO_MANDATE 12 (no
+  `grant`, or a `revoke`). The order of the checks: NO_MANDATE,
+  BAD_CALLDATA, then 4.8, with NO_POLICY last (4.8). `check` gives the
+  code. `execute` reverts on a code that is not 0.
+- O116 (S7 kickoff, gap): the zero signer. Before `grant` the stored
+  `viewer` and `vault` are 0, and a failed `ecrecover` gives the address
+  0. Thus a bad signature matches a zero key. The decoder must refuse a
+  zero signer (NO_VIEW, WRONG_SESSION, NEED_CONFIRM) and a call with no
+  mandate (NO_MANDATE, O115). Each case gets a refusal row in s2. The
+  guest side reverts on a failed recovery (O109).
+- O117 (S7 kickoff, builder call): `NO_POLICY` in S7. `grant` stores the
+  `policyVerifier` and `policyId` fields of `Mandate`. S7 has no
+  STATICCALL kit op (O12, S9), thus the S7 `check` gives NO_POLICY when
+  `policyVerifier` is not 0 (fail closed). S9 replaces this with the
+  verifier call of 4.9.
+- O118 (S7 kickoff, builder call): `grant` and `revoke` revert when
+  `caller env` is not `self env` (section 7). `execute` sets `used sid`
+  (a `Map U256 U256`, O16, O93), adds the total to `spent`, does `pay
+  token merchant total` and emits `Spent(sid, cartHash, total)`. The
+  builder checks that `langc build` lowers `emit`: examples/contract.lang
+  says that `langc build` refuses it (C-K4c-2), but test/lower/emit.lang
+  and the emit rows exist.
+- O119 (S7 s1 part 1, builder call): the cofield of `Machine` is `mStep`,
+  not `step`. `step` is a field of test/check/state-fun-field.lang, and a
+  domain def with that name gives REFUSE_NAME (R4). Section 4.7 and O110
+  say `mStep`; the Q-S7-3 text stays as the USER ruled it.
+  domain/domain.lang, after `sDuplicate`: `def Req : Type 0 := List U256`
+  and `cofamily Machine (A : Type 0) := mCorec (eps : A) (mStep : Req ->
+  Machine A)`. The cocell shape check unfolds `def Req` (cocell_kind
+  takes the normal form, then cell_closed in src/front/check.c).
+- O120 (S7 s1 part 1, builder call): R1 refuses `nil` and `cons` in a
+  guest program outside the kit. Thus the counter row is in a new kit
+  example, examples/machine.lang (a line in examples/kit.txt): `counter :
+  Machine Size` by `mCorec`, and `counterAt2`. test/eval/expect.txt:
+  `machine counterAt2 => szS (szS sz0)`. examples/cocell.lang does not
+  change. test/fronttool.c: a `List U256 -> Mach A` label (accepted) and
+  a `List A -> Mach A` label (REFUSE_CELL). Gate S7-s1-part1-gate.log:
+  EXIT 0, 48 lines; evals 165 to 166, examples 41 to 42. Open: a mutant
+  for the `List A` row (`cell_closed(t->a, 0u)` to `1u` in check.c).
+- O121 (S7 s1 resume 2, builder call): a `List U256` argument has at most
+  256 words. `ENTRY_LIST_MAX 256u` (src/front/check.h) and
+  `IR_LIST_WORDS_MAX 256u` (src/ir.h; src/evm.c does not include
+  check.h). A `_Static_assert` in src/lower.c makes the two copies equal.
+  The IR has `IR_SCALAR_U256_LIST` and `IR_EXPR_CALLDATA`.
+- O122 (S7 s1 resume 2, builder call): a `List U256` argument must be the
+  last argument. When a Pi follows it, `role_of` sees a helper (thus
+  `langc run` gives EVAL_ENTRY), and `residualize` gives REFUSE_LOWER "a
+  List U256 argument must be the last argument"
+  (test/lower/list-not-last.lang).
+- O123 (S7 s1 resume 2, builder call): the list argument lowers only as
+  the list of a `fold` (`lower_fold_arg`). Q-S7-2 (a) says a CALLDATALOAD
+  loop, thus there is no memory copy. Item j is the call data word at 4 +
+  32 N + 32 + 32 j. The scan reads item n - 1 first: p := 4 + 32 N + 32 n,
+  then n times x := CALLDATA(p), acc := F x acc, p := p - 32 (the right
+  fold of `lower_fold`). The address uses IR_OP_ADD and IR_OP_MUL with no
+  trap: `emit_list_head` checks n <= 256 first. `emit_list_head` reverts
+  with empty data when the offset word is not 32 N, when n > 256, or when
+  CALLDATASIZE < 4 + 32 N + 32 + 32 n. A list outside a fold gives
+  REFUSE_LOWER (O127).
+- O124 (S7 s1 resume 2, builder call): `langc eval` and `langc run` take
+  the list as the words after the other arguments (`list_arg` makes the
+  `cons` chain from the end). A bad count gives EVAL_ARGS "the call takes
+  N words and a list of at most 256 words, found M words". The word cap
+  of a script line is `ENTRY_PARAMS_MAX + ENTRY_LIST_MAX + 3u`.
+- O125 (S7 s1 resume 3, gap; fixed): `evm_abi_line` (src/evm.c) gave
+  each ABI type name at most 7 bytes (`name + 3 + 8 * count`), but
+  `uint256[]` has 9. `signature_of` returned 0, thus `langc abi` and
+  `langc build` of a list entry gave REFUSE_LOWER (EVM_BUILD_IR). Now 10
+  bytes for each type; `event_topic` keeps 8 (an event field is never a
+  list). The resume 2 build had no list row, thus it did not see the gap.
+  test/abi.expect: `0x3a428dd3 payList(uint256,uint256[]) entry` and
+  `0x1ff7b81c lastSeen() view` (`cast sig` gives the same selectors).
+- O126 (S7 s1 resume 3, facts): examples/listarg.lang (a kit example)
+  has the entry `payList (tag : U256) (xs : List U256)` and the view
+  `lastSeen` (`pay` and `seen` are domain names, R4). It stores `fold
+  (fun x acc => u256Add x (u256Add acc acc)) tag xs`.
+  test/run/listarg.script: 8 calls; lastSeen gives 5, 17, 25 and 19. A
+  scan from the head gives 19, not 25, for call 5. test/run.sh: 2
+  EVAL_ARGS rows (no words; 1u and 257 list words). test/evm.sh: the
+  listarg chain, 3 revert rows (offset, length, short) and the `--text`
+  abi block. test/evmchain.sh `input` writes a `uint256[]` last
+  parameter. test/lower: list-not-last.lang and list-outside-fold.lang.
+- O127 (S7 s1 resume 3, gap; Q-S7-4): the lower.c check for a list
+  argument outside a fold is defensive. No typed program gets to it:
+  `makeState tag xs` and `cons tag xs` as a List field get to the List
+  field check, and a fold over a List accumulator fold of xs gets to
+  "fold at a word position". list-outside-fold.lang is the `makeState tag
+  xs` probe. Its text called the list argument "the Env or the state as
+  one value". Q-S7-4 (a): `value_name` gives "a List U256 argument"
+  (`is_list_arg` moved before it), and the defensive text is "outside a
+  fold".
+- O128 (S7 s1 resume 4, facts): Q-S7-4 (a) is in src/lower.c
+  (test/lower/expect.txt checks the code only, thus no row changes).
+  examples/kit.txt has listarg.lang: the resume 3 gate stopped at
+  REFUSE_KIT, because test/gate.sh checks an example in guest mode when
+  kit.txt does not list it. docs/host/README.md: the `List U256`
+  argument, its script form, EVAL_ARGS above 256 words, `uint256[]` and
+  the list head checks. Gate S7-s1-gate.log: EXIT 0, 48 sorted lines.
+  The only differences from S7-s1-part1-gate.log: examples 42 to 43, runs
+  6 to 7, run refusals 14 to 16, lower refusals 15 to 17, checks 32 to
+  34, evm steps 43 to 54 (8 calls and 3 reverts). Mutants (test/evm.sh,
+  `make -B` for each), each KILLED: M1 (the offset check EQ, ISZERO,
+  JUMPI to EQ, POP) fails the offset row; M2 (the bound 256 + 1) fails
+  the length row; M3 (the size check without the length word) fails the
+  short row; M4 (a scan from the head: p := 4 + 32 N + 32, ADD 32) fails
+  listarg.script calls 5 to 8 (lastSeen 19, not 25). After the restore,
+  `git diff | shasum` is equal and test/evm.sh has 0 failures.
+- O129 (S7 s2 part 1, builder check, O118): `langc build` refuses the
+  `emit` op of the prelude. `build/langc --kit build test/lower/emit.lang`
+  gives REFUSE_LOWER "emit has no EVM form; use a named event", rc 1
+  (C-K4c-2). A named event lowers (the abi event row of
+  examples/contract.lang). Thus examples/mandate.lang declares `event
+  Spent (spentSid : U256) (spentCart : U256) (spentTotal : U256)`, and
+  `execute` gives `Spent` as an Out.
+- O130 (S7 s2 part 1, facts and builder calls): examples/mandate.lang
+  part 1 (288 lines, a kit example, the last line of examples/kit.txt).
+  The state: the 11 words of the mandate as the fields `mOwner` to
+  `mPolicyId` (the copy has the accessors `owner` to `policyId`),
+  `spent`, `used : Map U256 U256` and `revoked : Flag`. `init` is all 0
+  with `revoked` = flagYes, thus no `grant` and a `revoke` give the same
+  NO_MANDATE check (O115). Then the event Spent (O129), the lines 99 to
+  344 of examples/precompile.lang (Hash to Spend) between the comment
+  lines BEGIN COPY and END COPY (Q-S7-1 (a)), `stMandate`, the 13 codes
+  `codeOk` to `codeNoMandate` (O115), and the entries `grant` (11 words;
+  `spent` 0, `revoked` flagNo, `used` stays) and `revoke`. Both revert
+  when `caller env` is not `self env` (O118). `langc check` without
+  `--kit` gives REFUSE_KIT, rc 1; with `--kit` it gives ok. `langc --kit
+  build` gives rc 0, 1813 bytes. The ABI: grant 0xb080f3a3, revoke
+  0xb6549f75, the Spent topic 0xee58d782...d791, each equal to `cast
+  sig` and `cast sig-event`. The copy also gives the views domainWord,
+  listingHashV and merkle2V. No `check` and no `execute` yet (O131).
+- O131 (S7 s2 part 1, gap; Q-S7-5): the kit lowers the `List U256`
+  argument only as the list of a `fold` (O123), and K4c does not lower
+  `first` or `second` at a word position. Thus a `fold` with a Prod
+  accumulator gets REFUSE_LOWER. Three probes: a view with a `Prod Nat
+  U256` accumulator, an entry with that accumulator and a `mapSet` of
+  the state, an entry with a three-word accumulator, a `pay` and an
+  event. Each `langc --kit check` gives ok; each `langc --kit build`
+  gives rc 1. A word accumulator cannot hold the position, the root, the
+  line fields and the cart sums of the decoder. The USER RULED Q-S7-5
+  (a) (2026-10-25).
+- O132 (S7 s2 resume 1, Q-S7-5 (a)): the kit change in src/lower.c. A
+  `fold` over the `List U256` argument takes a right-nested Prod of
+  words as the accumulator, with at most 32 words (ENTRY_PARAMS_MAX).
+  New functions before `lower_expr`: `step_must_trap`, `step_words` (the
+  step words in slot order; a step must be a nested `pair` or a `flagIf`
+  with pair arms, else REFUSE_LOWER "(a fold step that is not a pair)"),
+  `acc_value` (slot i is the local base + i), `lower_fold_arg` (it gives
+  the REPEAT stmt and the base; the step sets temporary locals, then the
+  slots) and `lower_slot` (`first` and `second` of the fold lower to the
+  slot local; one loop for each fold Value, memo as `lower_curve`). More
+  than 32 words: REFUSE_LOWER "(a fold accumulator of more than 32
+  words)". A word fold keeps the old local layout (acc, p, x, counter),
+  thus the old bytes do not change. The rows:
+  test/lower/fold-pair-wide.lang (33 words, REFUSE_LOWER, the last line
+  of test/lower/expect.txt), examples/listarg.lang view `pairFold` (3
+  words; the model of a shared fold: `(fun (r : T) => ... first r ...
+  second r) (fold F Z xs)`), test/run/listarg.script lines 9 to 11 (0u,
+  21u, 17u; the evm chain runs them too) and test/abi.expect `0x651b3c42
+  pairFold(uint256[]) view` (equal to `cast sig`). The gate
+  mandate-lang-work/S7-s2-resume1-gate.log: EXIT 0, 48 lines; against
+  S7-s2-part1-gate.log, lower refusals 17 to 18, checks 34 to 35, evm
+  steps 54 to 57.
+- O133 (S7 s2 resume 1, gap; Q-S7-6): eval keeps a trap in one part of
+  a pair (`reduce_op` OP_PAIR has no trap check), but the evm loop
+  reverts at the first trap of a slot. Thus `second (fold ...)` can give
+  a value on `langc run` and a revert on evm. The USER RULED Q-S7-6 (a)
+  (2026-10-25): src/front/eval.c gets `pair_trap` and `fold_acc`, and
+  `reduce_fold_list` puts Z and each step through `fold_acc` (a pair
+  accumulator with a trapped part is that trap). src/lower.c then checks
+  `step_must_trap (F x trap)` for a word or a pair accumulator. The
+  three probes of O131 ($TMPDIR/s7s2-p1.lang to p3) now give `langc
+  --kit build` rc 0.
+- O134 (S7 s2 resume 2, gap; Q-S7-7): the kit has no U256 to Nat op.
+  `ecrecover` takes v as a Nat (src/front/check.c, SHAPE_NAT), and the
+  copy `merkle` and `side` take the leaf index as a Nat (`natDiv`,
+  `natMod`). The calldata is `List U256`, and `toU256` goes only from
+  Nat to U256 (eval keeps a Nat as a uint64). The USER RULED Q-S7-7 (a)
+  (2026-10-25): no kit change. The decoder changes the v word to the
+  Nat 27 or 28 by `flagIf` (another word gives 0, thus the address 0,
+  thus the zero signer refusal of O116). Each line gives one direction
+  word for each sibling in place of the leaf index: 0u gives `hash h s`
+  and 1u gives `hash s h`, as `side` with the bits of the leaf index
+  from the leaf up; another word gives BAD_CALLDATA. The depth counter
+  is a U256. The decoder hashes with its own word step; the copy does
+  not change (Q-S7-1 (a)).
+- O135 (S7 s2 resume 2b, Q-S7-8): two gaps of the decoder. (i) `pay`
+  takes `payTo : Addr`, the calldata gives words, and the kit has no
+  U256 to Addr op. The USER RULED (b) (2026-10-25): the state keeps the
+  merchant address `mMerchant` (one merchant for each grant; `grant`
+  takes it as the last argument, after `pi`). No kit change. The header
+  merchant word must be `addrToU256 (mMerchant s)`, and the merchant
+  word of each line must be the header word, else WRONG_MERCHANT. (ii)
+  PLAN 4.8 has no code for qty more than `maxQty` (the `Le q (maxQty l)`
+  part of `Line`). The USER RULED (a) (2026-10-25): NO_PATH (the line is
+  not a `Line` of the view).
+- O136 (S7 s2 resume 2b, the decoder layout): `check` and `execute` read
+  the calldata `List U256` with one fold. The fold reads the end of the
+  list first (O70). The 13 header words are at the end: sid, the
+  merchant word, root, the view sig (v, r, s), the cred sig (v, r, s),
+  the claim hash k, the confirm sig (v, r, s). Then the lines, the last
+  line of the cart first (as the copy folds): the merchant word, sku,
+  price, maxQty, qty, the depth n (8 or less), then n pairs (a direction
+  word, a sibling) from the leaf up. The accumulator is a right-nested
+  Prod of 30 words: pos, bad, the 13 header words, lp, lm, lk, lpr,
+  lmq, lq, ld, lh, ldir, ch, tot, ck, cn, err, ovf. err starts at 5u (no
+  line error) and keeps the smallest line code (NO_PATH 2,
+  WRONG_MERCHANT 3, NOT_CANONICAL 4). The key of a line is
+  `listingHash` (the Merkle leaf); the cart hash is the fold of `hash
+  (hash key qty) ch` from 0u. No slot can trap (Q-S7-6 (a)): price and
+  qty must each be 2^128 - 1 or less and the sum must fit, else ovf
+  (OVER_CAP); the depth counter subtracts from a clamped word.
+  BAD_CALLDATA: the bad flag (a depth over 8, a direction word that is
+  not 0u or 1u), fewer than 13 words, or a list that stops in a line. A
+  cart with no lines is not refused (the copy folds nil).
+- O137 (S7 s2 resume 2c, the EVM size limit; Q-S7-1 (a), guest first):
+  with the O136 decoder, `--kit build` gave EVM_SIZE (the runtime code
+  was more than 24576 bytes). The probes: a lambda application of a word
+  lowers in a view body and in a fold step. But the bound form and the
+  inline form have the same size (1140 and 1140 bytes in a view, 1242
+  and 1242 bytes in a fold step), thus the lowerer copies the argument
+  at each use and a guest binder does not make the code smaller. Two
+  changes of algebra that keep each code: (1) PQ is `flagIf OKPQ
+  (u256Mul lpr lq) 0u` (one copy of OKPQ, not two; the else value is 0u
+  as before). (2) err starts at 0u. Each line adds the weight of its
+  first failed check: NO_PATH 2^128, WRONG_MERCHANT 2^64, NOT_CANONICAL
+  1. The code chain gives NO_PATH when err is 2^128 or more,
+  WRONG_MERCHANT when err is 2^64 or more, NOT_CANONICAL when err is not
+  0u. The chain gets to a test only when the tests before it are false,
+  thus each code is the same as with the smallest line code of O136. The
+  list has fewer than 2^64 lines, thus the sum cannot overflow and the
+  weights do not mix. Each step now has one copy of the line code (O136
+  had two). The runtime code is 22457 bytes: check only 8646, execute
+  only 14723, grant, revoke and the dispatcher 912 (8646 + 14723 - 912 =
+  22457). The margin is 2119 bytes. No kit change; no ruling.
+- O138 (S7 s2 resume 2d, the run, abi and copy rows; Q-S7-1 (a)):
+  test/run/mandate.script and .out (30 rows) run examples/mandate.lang
+  with `langc run`. grant from self stores tMandate and the merchant 0xaa.
+  grant and revoke from another caller revert. The honest spend is tSpend
+  of examples/precompile.lang (the total 450u). `check` gives 0u. `execute`
+  pays 450u of the token 0x05 to 0xaa and gives the event Spent. Then the
+  session is used: `check` gives REPLAY (9u) and `execute` reverts. Each
+  code from 1u to 12u has a row with one fault. A second root (root2)
+  holds demoL0 and a listing of the merchant 0xbb (sku 5u, price 10u,
+  maxQty 5u). The anvil key 0 (the viewer
+  0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266) signs the view of root2. The
+  O137 rows: a line of 0xbb (WRONG_MERCHANT) read first and demoL0 with a
+  bad sibling (NO_PATH) next give 2u. A line of 0xbb read first and demoL0
+  (NOT_CANONICAL) next give 3u. Note: `canonical` orders the listing
+  hashes, not the sku. In read order the hashes go down. With sku 3u,
+  demoL0 is in order and the row tests only WRONG_MERCHANT, thus sku 5u.
+  The abi rows: test/evm.sh and test/abi.expect hold the `langc abi --text`
+  lines of examples/mandate.lang. Each selector equals `cast sig`:
+  check(uint256[]) 0x1b365701, execute(uint256[]) 0x8ef16cd9 and
+  grant(address,address,address,address,address,uint256,uint256,uint256,uint256,address,uint256,address)
+  0xb17962e1. The copy row: test/precompile.sh compares the lines between
+  BEGIN COPY and END COPY of examples/mandate.lang with lines 99 to 344 of
+  examples/precompile.lang (`cmp`). A cart with no lines: the copy does not
+  refuse it. `canonical` of nil is flagYes and the total 0u is not over the
+  autoLimit (`inl refl`). `check` also gives 0u (row 25), thus no Q-S7-10.
+  Item 4 of resume 2d (the Q-S7-6 trap row) is NOT done.
+- O139 (S7 s2 resume 2e and 2f, the Q-S7-6 trap row and the evm rows of
+  examples/mandate.lang; Q-S7-6, Q-S7-1 (a)): test/run/listarg.script row
+  12 `pairFold 0xff...ffu 1u` (64 f) gives trap. The right fold reads 1u
+  first, then x + 2 acc = (2^256 - 1) + 2 overflows u256Add in the fold
+  slot. The evm chain of listarg replays the row (the evm gives trap).
+  The evm rows of examples/mandate.lang: test/evm.sh runs `chain` on
+  test/mandate-evm.script (30 rows), that is test/run/mandate.script with
+  the token 0x..ee in each grant. The chain id: `langc run` signs the view
+  sig with the chain id 1337 (the domain of the view sig), and
+  test/evmchain.sh sets the chain id 1. With the chain id 1 the view
+  digest is different and ecrecover gives another signer: each check row
+  that needs a good view sig gave NO_VIEW (a trial: 19 failures in 30
+  steps). A trial with the chain id 1337 gave 6 failures, all in rows 26
+  to 30. Thus the mandate chain uses the chain id 1337, and the other
+  chains keep the chain id 1. The token: 0x..05 is the modexp precompile
+  and a precompile ignores alloc code, thus the pay CALL of execute
+  failed. Choice (a): a second script with the token 0x..ee, and the mock
+  token of test/diff.sh (`asmtool mock`, mode 0) in `alloc`. Reason: each
+  row goes through `chain`, also REPLAY and the execute revert after the
+  pay, with the check of the result, the storage and the logs of each
+  step. Choice (b) (rows 1 to 25 and one hand step for execute) does not
+  check the rows after the pay. When alloc is set, `chain` keeps only the
+  storage of the receiver (step puts the storage of all accounts in
+  tmp/raw), and `wantlogs` adds the line of the Transfer LOG3 of the mock
+  for each pay line. `langc run` gives the same codes for the two
+  scripts; only the pay line and the state line (the token) differ. A
+  trial of the new block: 30 steps, 0 failures. The evm steps of the
+  gate go from 58 to 88.
+- O140 (S7 s2 resume 3 to 5, the mutants of s2; s2 DONE, 2026-10-25,
+  claude7). The 25 mutants: c0 and the 12 code mutants, G, V, X0, W2
+  and W3 KILLED by `langc run`; L1 KILLED by test/build.sh; O1 and O2
+  KILLED by test/evm.sh. Resume 3: PQ (COUNT 6), F1, S1 and S2
+  SURVIVED. Resume 4 added rows for F1, S1 and S2:
+  test/lower/fold-discard.lang (the step `flagIf (u256Eq x 0u) 1u
+  (u256Add x acc)` discards acc at x = 0; the expect.txt row
+  `fold-discard.lang REFUSE_LOWER`) and the view countFold of
+  examples/listarg.lang (rows 13 and 14 of test/run/listarg.script,
+  the ABI line `0x05c46e82 countFold(uint256[]) view`). F1 KILLED
+  (`FAIL run test/run/listarg.script`). S2 KILLED (`FAIL lower
+  fold-discard.lang`). S1 (`||` in a `&&` chain) stopped the
+  check-clang build (-Werror, -Wlogical-op-parentheses): a build stop,
+  not a kill. S1p (the `||` in parentheses) KILLED (`FAIL lower
+  fold-discard.lang`). Resume 5: PQ changes the guard Q <= 2^128 - 1
+  before each u256Mul (6 sites) to Q <= 2^256 - 1. The `ovf` guard
+  gives OVER_CAP without the product, thus only a u256Mul trap shows
+  PQ. Rows 31 (grant from self again) and 32 (the honest spend with
+  the quantity 2^255 of demoL1) of test/run/mandate.script: the
+  original gives `32 check = 2u` (NO_PATH: the quantity is more than
+  maxQty 1u), PQ gives `32 check trap`. PQ KILLED (`FAIL run
+  test/run/mandate.script`). The state line of mandate.out changes:
+  spent 450u to 0u, revoked flagYes to flagNo. test/mandate-evm.script
+  does not have rows 31 and 32. All 25 mutants are KILLED (S1 as
+  S1p). The final gate (S7-s2-gate.log): EXIT 0, the same as the
+  resume 4 final gate. The count changes of s2: lower refusals 18 to
+  19, checks 35 to 36, evm steps 88 to 90; the PQ rows change no
+  count. TRAP for later mutants: a `||` mutant in a `&&` chain needs
+  parentheses, else the clang -Werror build stops it.
+- O141 (S7 s3, the plan of s3, 2026-10-25, claude7): O110 s3 is the
+  differential (Q-S7-3), the gas rows and the size rows (O114),
+  docs/host/CAPABILITY.md and docs/host/README.md. Q-S7-9 and Q-S7-10
+  RULED (a). The parts:
+  - s3 part 1: test/diff.sh part 2 also runs test/mandate-evm.script
+    on examples/mandate.lang, with the chain id 1337 (the domain of
+    the view sig, O139) and the mock in mode 0 at the token 0x..ee.
+    Each step must give the result of `langc run`. At the end, the
+    contract storage must equal the state of `langc run`, and the
+    mock balances must equal the pay sums (the merchant 0x..aa has
+    450u, self has -450u mod 2^256). test/evm.sh keeps its mandate
+    chain. The size rows: the runtime and the creation code of `langc
+    --kit build examples/mandate.lang`, against ASM_RUNTIME_MAX 24576
+    and ASM_CAPACITY 49152. Then the gate.
+  - s3 resume 1, the gas ladder (Q-S7-10 (a)): closed honest spends
+    as guest terms, at the Merkle depth 1, 2, 4 and 8 (a cart of 1
+    line) and with carts of 1, 2 and 4 lines (depth 2). The words come
+    from `langc eval`, the sigs from `cast wallet sign --no-hash`, as
+    for tSpend. One grant; each spend has a new session; mCap is large
+    enough. The call script test/run/mandate-gas.script and its .out
+    (test/run.sh). A runner in the work dir measures the gas of
+    `check` and of `execute` for each spend with `evm run --statdump`.
+  - s3 resume 2: docs/host/CAPABILITY.md (the gas table and the size
+    rows, as C-K4-19), docs/host/README.md, and the O15 bound 8 (it
+    stays, unless the gas gives a reason).
+  - s3 part 1 results (2026-10-25, the runner S7-s3-p1.sh, the result
+    S7-s3-p1.txt): the size rows of examples/mandate.lang: the
+    creation code is 22482 bytes (the limit is 49152), the runtime is
+    22457 bytes (the limit is 24576: 2119 bytes free, 91.4 percent).
+    Thus a large change to the contract can go over EIP-170.
+    test/diff.sh alone: `diff gate: 16 rows, 0 failures` (15 to 16),
+    36 s. The gate (S7-s3-gate.log, 334 s): EXIT 0; the only change
+    from the s2 final gate is the diff gate line, 15 to 16 rows.
+- O142 (S7 s3 resume 1 and 1b, the gas ladder, 2026-10-26, claude7):
+  Q-S7-11 RULED (a) for its 3 parts. The closed gas spends are guest
+  terms in examples/precompile.lang, after `def tGateLe` (as tSpend
+  is): gMandate (tMandate with the token 0x..ee and the cap 1000000u),
+  then for each spend the listings, Root, ViewSig, CredSig,
+  ConfirmSig, View, Session, Prov and Line of each line, Cart, Cred,
+  Confirmed, Gate and Spend (205 lines). Each spend has a new session,
+  the total 200u, the claim hash 77u, the merchant 0x..aa, qty 1u and
+  maxQty 5u. The autoLimit is 100u (as tMandate), thus each spend
+  needs the confirm sig (3 ecrecover calls, the worst case, as
+  tSpend). The spends:
+  - gd1Spend: sid 101u, 1 line, Merkle depth 1 (index 1, 21 words).
+  - gd2Spend: sid 102u, 1 line, depth 2 (index 2, 23 words).
+  - gd4Spend: sid 104u, 1 line, depth 4 (index 5, 27 words).
+  - gd8Spend: sid 108u, 1 line, depth 8 (index 85, 35 words).
+  - gc2Spend: sid 202u, 2 lines, depth 2 (33 words).
+  - gc4Spend: sid 204u, 4 lines, depth 2 (the cart has the tree
+    leaves in the order 1, 0, 3, 2; 53 words).
+  The call script test/run/mandate-gas.script (22 lines) has 3 header
+  comments, the grant from self, then for each spend a comment, check
+  and execute (the caller 0x..bb, as row 26 of
+  test/run/mandate.script). NOW of check and execute is 2 and 3, 4
+  and 5, to 12 and 13. Before each spend, the spent amount is 0u,
+  200u, to 1000u. Its .out has 26 lines. test/run.sh removes the
+  script name from the first dash, thus test/run/NAME-PART.script
+  runs examples/NAME.lang (Q-S7-11 (a) part 2). The generator
+  mandate-lang-work/S7-s3-r1-gen.pl (it writes no repo file) made the
+  3 files; resume 1b copied them into the repo.
+  - resume 1 results (2026-10-26): `langc --kit eval` of each Spend
+    exits 0 (the guest checks each Merkle path, the 3 sigs, the cap,
+    the expiry and the gate). `langc --kit run examples/mandate.lang`
+    on the script exits 0: 6 `check = 0u` and 6 `execute ok`, each
+    with a pay of 200u from the token 0x..ee to 0x..aa and an event
+    Spent. `langc --kit build examples/precompile.lang`: the creation
+    code is 1725 bytes and the runtime is 1705 bytes (O143 corrects
+    5215), before and after (the closed defs do not go in the code).
+  - resume 1b, the gas runner mandate-lang-work/S7-s3-r1b.sh: a copy
+    of test/diff.sh runs only the gas script on `evm` (the chain id
+    1337, the mock in mode 0 at 0x..ee). Each step also runs `evm run
+    --statdump` on the same prestate. Then test/precompile.sh and the
+    gate.
+  - resume 1b results (2026-10-26, the runner S7-s3-r1b.sh, the
+    result S7-s3-r1b.txt, the log S7-s3-r1b-gas.log): the gas copy
+    gives `diff gate: 1 rows, 0 failures` (37 s). Thus each step
+    gives the result of `langc run`, and the end storage and the mock
+    balances are correct. The gas is the `evm run` value (the
+    intrinsic gas of a transaction, 21000 and the calldata, is not in
+    it). The grant is 233442. The spends:
+    - gd1Spend (1 line, depth 1): check 152881, execute 364952.
+    - gd2Spend (1 line, depth 2): check 164484, execute 336774.
+    - gd4Spend (1 line, depth 4): check 187521, execute 382848.
+    - gd8Spend (1 line, depth 8): check 233533, execute 474914.
+    - gc2Spend (2 lines, depth 2): check 223120, execute 454130.
+    - gc4Spend (4 lines, depth 2): check 340571, execute 688948.
+    Each extra Merkle level adds about 11500 gas to check (11603,
+    then 11519 and 11503 for each level) and about 23000 to execute
+    (from gd2: 23037 and 23017 for each level). Each extra line adds
+    about 58700 gas to check (58636, then 58726 for each line) and
+    about 117400 to execute (117356, then 117409 for each line). The
+    execute of gd1 is more than the execute of gd2, probably because
+    it is the first pay: it writes storage slots that are zero (the
+    spent amount and the mock balances). test/precompile.sh:
+    `precompile gate: 0 failures`. The gate (S7-s3-r1b-gate.log, 650
+    s): EXIT 0; the only change from the s3 part 1 gate is the run
+    count, 8 to 9 runs. The git diff sha is the same before and after
+    the runner.
+- O143 (S7 s3 resume 2, the gas and size docs, 2026-10-26, claude7):
+  docs/host/CAPABILITY.md C-K4-19 has the mandate gas table of O142
+  (the grant, the check and execute of the 6 spends, the step of each
+  Merkle level and each line, the `evm run` note) and the size rows.
+  docs/host/README.md `## The mandate contract (slice S7)` has short
+  gas and size lines and a pointer to C-K4-19.
+  - The size of examples/precompile.lang: `langc --kit build` gives
+    the creation code 1725 bytes and `langc --kit build --runtime`
+    gives the runtime 1705 bytes. Resume 1 recorded the runtime 5215
+    in error. 5215 is the PUSH2 value at byte 11 of the creation code
+    (probably the method of the s3 part 1 runner). That byte holds
+    the runtime length only when the constructor writes a slot, as in
+    examples/mandate.lang. O142 has the correct value now.
+    examples/mandate.lang: creation 22482, runtime 22457 in the two
+    modes (the same as s3 part 1).
+  - O15: the bound 8 stays (no Q). Depth 8 costs 233533 for check and
+    474914 for execute (less than 2 percent of a block of 30000000
+    gas). Depth 16 would add about 92000 to check and about 184000 to
+    execute. The cost of each level is small and linear, thus the gas
+    gives no reason to change the bound.
+  - No gate step reads the 2 docs (the Makefile names README.md only
+    in a comment), thus resume 2 runs no gate. s4 runs the final gate.
+- O144 (S7 s4, the S7 close, 2026-10-26, claude7): the final gate.
+  The runner mandate-lang-work/S7-s4.sh (the result S7-s4.txt, the
+  log S7-s4-gate.log) runs test/precompile.sh (`precompile gate: 0 failures`), then `make
+  -j 2 check`: EXIT 0 in 478 s. After a filter of the build lines
+  and a sort, the lines are the same as the lines of the s3 resume 1b
+  gate (S7-s3-r1b-gate.log). The diff gate line is `diff gate: 16 rows, 0 failures`. The git
+  diff sha did not change during the run.
+  - The definition of done (the S7 row and O110), item by item:
+    - `Machine`: `Machine` and `Req` in domain/domain.lang, with the
+      cofield `mStep` (O119), and the kit example
+      examples/machine.lang (O120). The `List U256` entry argument
+      (Q-S7-2 (a)): the CALLDATALOAD fold (O121 to O124), the
+      `uint256[]` ABI fix (O125), examples/listarg.lang and its rows
+      (O126). The Prod fold accumulator (Q-S7-5 (a), O132) and the
+      trap of a part (Q-S7-6 (a), O133).
+    - The contract of section 7: examples/mandate.lang with `grant`,
+      `revoke`, the view `check` and `execute` (O130), the build and
+      the run rows (O137, O138), the evm rows (O139). One refusal row
+      for each chain refusal of 4.8 and of O115, but not `NO_POLICY`
+      (S9, O117).
+    - The decoder: the layout of O136 and the rulings of Q-S7-7 (O134)
+      and Q-S7-8 (O135).
+    - The differential: part 2 of test/diff.sh runs
+      test/mandate-evm.script on examples/mandate.lang (Q-S7-9 (a),
+      O141).
+    - The gas rows: test/run/mandate-gas.script and its .out (Q-S7-10
+      (a), Q-S7-11 (a), O142). The size rows: the runtime is 22457
+      bytes (the limit is 24576), the creation code is 22482 bytes
+      (the limit is 49152) (O141, O143).
+    - The docs: docs/host/CAPABILITY.md C-K4-19 and
+      docs/host/README.md (O143).
+    - The mutants of the decoder and of each refusal row: O110 put
+      them in s4, but s2 resume 3 to 5 ran them (O140): 25 of 25
+      KILLED (S1 as S1p). Thus s4 runs no mutant loop.
+    - The gate and the commit message: this O.
+  - The files: 35 (21 modified, 14 new). Modified: docs/PLAN.md,
+    docs/host/CAPABILITY.md, docs/host/README.md, domain/domain.lang,
+    examples/kit.txt, examples/precompile.lang, src/evm.c,
+    src/front/check.c, src/front/check.h, src/front/eval.c, src/ir.h,
+    src/lower.c, test/abi.expect, test/diff.sh, test/eval/expect.txt,
+    test/evm.sh, test/evmchain.sh, test/fronttool.c,
+    test/lower/expect.txt, test/precompile.sh, test/run.sh. New:
+    examples/listarg.lang, examples/machine.lang,
+    examples/mandate.lang, test/lower/fold-discard.lang,
+    test/lower/fold-pair-wide.lang, test/lower/list-not-last.lang,
+    test/lower/list-outside-fold.lang, test/mandate-evm.script,
+    test/run/listarg.out, test/run/listarg.script,
+    test/run/mandate-gas.out, test/run/mandate-gas.script,
+    test/run/mandate.out, test/run/mandate.script.
+  - The 35 files are staged in the main checkout. The commit message
+    file is mandate-lang-work/S7-commit-msg.txt. The USER commits
+    (`git commit -s -F`). The next slice is S8
+    (mandate-lang-work/S8-PROMPT.md).
 
 ## 11. Questions for the USER (S1)
 
@@ -1230,3 +1802,102 @@ New questions (S6), kickoff 2026-10-25 (section 1):
   Flag; `confirm` uses the inspect form, and the no case reverts. (b) a
   kit op `flagAssert b : Path Flag b flagYes` (a trap on flagNo). (c) no
   kit change; `confirm` gives the raw Sig. RECOMMENDED (a). RULED (a).
+
+New questions (S7), kickoff 2026-10-25 (section 1):
+
+- Q-S7-1 (O112): the source of the contract. (a) a guest contract in a
+  new file examples/mandate.lang: a `state` (the mandate words, `spent`,
+  `used`, `revoked`), the entries `grant`, `revoke` and `execute`, and
+  the view `check`, built by `langc build` with the kit lowering. It
+  copies the defs from `Hash` to `Spend` of examples/precompile.lang,
+  and a gate row compares the two copies. No C writer (Q-S2-1).
+  RECOMMENDED; RULED. (b) a C writer of the four entries, as the writer of
+  bridge-lang. (c) the mandate state and the entries go into
+  examples/precompile.lang (no copy; the S4 `sign` entry and its rows
+  change).
+- Q-S7-2 (O113): the calldata of `check` and `execute`. (a) a kit
+  change: an entry argument of type `List U256` (the ABI `uint256[]`),
+  lowered by a CALLDATALOAD loop to the list form. A `langc run` script
+  gives the list as words. The guest decoder reads the spend from the
+  list; a short or a bad list gives BAD_CALLDATA (O115). Carts of all
+  lengths, and the Merkle depth to 8 (O15). RECOMMENDED; RULED. (b) word
+  arguments only: a cart of 1 line at Merkle depth 2, at most 32 words,
+  no kit change; more lines after S7.
+- Q-S7-3 (O110, 4.7): `Machine`, `Req` and the differential. (a)
+  `cofamily Machine (A : Type 0) := mCorec (eps : A) (step : Req ->
+  Machine A)` in domain/domain.lang (the S4 cocell check: a labelled
+  cofield over closed data). `Req` is `List U256`: the four words of the
+  `Env` (O112: domain/domain.lang cannot name `Env`), the selector and
+  the arguments. `step` is the guest decoder and the entry. The
+  differential runs each call script on `langc run` and on `evm`
+  (test/evmchain.sh), as part 2 of test/diff.sh. `submit` of `IO` stays
+  one word; the rows from an IO script to the chain come in S8.
+  RECOMMENDED; RULED. (b) as (a), but `submit` sends the calldata list and
+  takes the code, thus one IO script drives the guest and `evm` in S7
+  (the run law of 4.7 in S7). (c) `Req` is a family of typed calls, and
+  the decoder is outside of `Machine`.
+- Q-S7-4 (O127): the text of the List field refusal for the `List U256`
+  argument (src/lower.c `value_name`). It said "the Env or the state as
+  one value". (a) `value_name` gives "a List U256 argument" when
+  `is_list_arg` (one change; the list-outside-fold text is then correct).
+  RECOMMENDED; RULED (2026-10-25). (b) Keep the text; an O item only.
+- Q-S7-5 (O131): the lowering of the decoder fold. (a) a kit change in
+  src/lower.c: a `fold` over the `List U256` argument with a right-nested
+  Prod of words as the accumulator (at most 32 words, as
+  ENTRY_PARAMS_MAX); `first` and `second` of the accumulator lower to its
+  slots. The decoder is one guest fold, as Q-S7-2 (a): all cart lengths,
+  the Merkle depth to 8, the same term on `langc run` and on `evm`
+  (Q-S7-3). RECOMMENDED; RULED (2026-10-25). (b) a kit op `listAt xs i`
+  (one CALLDATALOAD, 0 past the end) and folds with a word accumulator
+  only: the decoder reads the header words by index and unrolls the
+  Merkle path to depth 8 and the cart to a fixed bound, thus the cart
+  length gets a bound.
+- Q-S7-6 (O133): a trap in one part of a Prod fold accumulator. (a)
+  src/front/eval.c `pair_trap` and `fold_acc`: `reduce_fold_list` puts
+  Z and each step through `fold_acc`, thus a pair accumulator with a
+  trapped part is that trap, as in the evm loop; src/lower.c checks
+  `step_must_trap (F x trap)` for a word or a pair accumulator.
+  RECOMMENDED; RULED (2026-10-25). (b) Keep eval; a REFUSE_LOWER of a
+  pair fold that can trap, plus kit ops that do not trap. (c) Every pair
+  with a trapped part is a trap.
+- Q-S7-7 (O134): the decoder and the missing U256 to Nat op. (a) Guest
+  only, no kit change: the v word to the Nat 27 or 28 by `flagIf`
+  (another word gives the address 0, O116), one direction word for each
+  sibling in place of the leaf index (0u or 1u, else BAD_CALLDATA), a
+  U256 depth counter. RECOMMENDED; RULED (2026-10-25). (b) A kit op
+  `toNat : U256 -> Nat` (an eval trap over 2^64 - 1, an evm range revert
+  for parity, lower rows, mutants); the layout keeps the leaf index.
+- Q-S7-8 (O135): (i) the merchant Addr for `pay`. (a) A kit op `toAddr
+  : U256 -> Addr` (a trap when the high 96 bits are not 0, the same
+  check on evm, lower rows, mutants). RECOMMENDED. (b) The merchant
+  address in the mandate state (one merchant for each grant). RULED (b)
+  (2026-10-25). (ii) The code for qty more than maxQty. (a) NO_PATH.
+  RECOMMENDED; RULED (2026-10-25). (b) BAD_CALLDATA.
+- Q-S7-9 (O141): the mandate differential. (a) test/diff.sh part 2
+  also runs test/mandate-evm.script (the chain id 1337; the end
+  storage and the mock balances); test/evm.sh keeps its mandate chain
+  (each step: the result, the storage, the logs). The gate takes
+  about 3 minutes more. RECOMMENDED; RULED (2026-10-25). (b) Move the
+  mandate chain from test/evm.sh to test/diff.sh (evm steps 90 to
+  60). (c) Keep it in test/evm.sh only, with a mock balance check at
+  the end.
+- Q-S7-10 (O141): the spends of the gas ladder (O114). (a) A call
+  script test/run/mandate-gas.script and its .out (test/run.sh checks
+  them); a runner in the work dir measures the gas once with `evm run
+  --statdump`; the values go in docs/host/CAPABILITY.md, as C-K4-19.
+  RECOMMENDED; RULED (2026-10-25). (b) As (a), and test/diff.sh part
+  2 also runs the gas script on `evm`. (c) The spends stay in the work
+  dir; only the table goes in docs/host/CAPABILITY.md.
+- Q-S7-11 (O142): the closed gas spends. Part 1, the file of the
+  guest terms. (a) examples/precompile.lang, after `def tGateLe` (as
+  tSpend); the closed defs do not go in the code. RECOMMENDED. (b) A
+  new example file for the gas spends. RULED (a) (2026-10-26). Part
+  2, the program of the call script. (a) test/run.sh removes the
+  script name from the first dash, thus test/run/NAME-X.script runs
+  examples/NAME.lang (no script name has a dash now). RECOMMENDED.
+  (b) A map of script names to programs in test/run.sh. RULED (a).
+  Part 3, the path of each spend. (a) The confirm path: the autoLimit
+  100u (as tMandate) and each total 200u, thus each spend needs the
+  confirm sig (3 ecrecover calls, the worst case, as tSpend).
+  RECOMMENDED. (b) The auto path: each total at or below the
+  autoLimit (no confirm sig). RULED (a).

@@ -51,3 +51,19 @@ usage: langc [--kit] check PROG
        langc [--kit] build PROG [-o OUT] [--runtime]
 --kit: the kit mode, the trusted test scope of the kit gate
 exit 2
+# examples/listarg.lang --text
+0x3a428dd3 payList(uint256,uint256[]) entry
+0x1ff7b81c lastSeen() view
+0x651b3c42 pairFold(uint256[]) view
+0x05c46e82 countFold(uint256[]) view
+exit 0
+# examples/mandate.lang --text
+0x236a9172 domainWord() view
+0xfd7bb200 listingHashV(address,uint256,uint256,uint256) view
+0x2815d777 merkle2V(uint64,uint256,uint256,uint256) view
+0xb17962e1 grant(address,address,address,address,address,uint256,uint256,uint256,uint256,address,uint256,address) entry
+0xb6549f75 revoke() entry
+0x1b365701 check(uint256[]) view
+0x8ef16cd9 execute(uint256[]) entry
+0xee58d782feba6770743604a43b7e7f640d24e21c8ffdcc4d07368c5277b8d791 Spent(uint256,uint256,uint256) event
+exit 0

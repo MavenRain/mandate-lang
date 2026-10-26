@@ -1,0 +1,19 @@
+-- A List U256 entry argument (S7 s1, Q-S7-2 (a)): the last argument of an entry is a uint256[] in the call data.
+-- The entry payList stores a fold of tag and xs that depends on the order of xs: x + 2 acc, from the last element to the head.
+state State := makeState (last : U256) (calls : U256)
+
+def init : State := makeState 0u 0u
+
+def payList : (env : Env) -> (s : State) -> (tag : U256) -> (xs : List U256) -> Option (Prod State (List Out)) :=
+  fun (env : Env) (s : State) (tag : U256) (xs : List U256) => some (pair (makeState (fold (fun (x : U256) (acc : U256) => u256Add x (u256Add acc acc)) tag xs) (u256Add (calls s) 1u)) nil)
+
+def lastSeen : (env : Env) -> (s : State) -> U256 :=
+  fun (env : Env) (s : State) => last s
+
+-- The view pairFold folds xs with a Prod accumulator of 3 words (S7 s2, Q-S7-5 (a)): the count, x + 2 acc, the last x read.
+def pairFold : (env : Env) -> (s : State) -> (xs : List U256) -> U256 :=
+  fun (env : Env) (s : State) (xs : List U256) => (fun (r : Prod U256 (Prod U256 U256)) => u256Add (first r) (u256Add (first (second r)) (second (second r)))) (fold (fun (x : U256) (a : Prod U256 (Prod U256 U256)) => pair (u256Add (first a) 1u) (pair (u256Add x (u256Add (first (second a)) (first (second a)))) x)) (pair 0u (pair 0u 0u)) xs)
+
+-- The view countFold folds xs with the step of pairFold and gives only the count (S7 s2 resume 4, Q-S7-6 (a)): a slot that traps makes the fold a trap, thus the view traps.
+def countFold : (env : Env) -> (s : State) -> (xs : List U256) -> U256 :=
+  fun (env : Env) (s : State) (xs : List U256) => first (fold (fun (x : U256) (a : Prod U256 (Prod U256 U256)) => pair (u256Add (first a) 1u) (pair (u256Add x (u256Add (first (second a)) (first (second a)))) x)) (pair 0u (pair 0u 0u)) xs)

@@ -4742,6 +4742,7 @@ typedef enum { ROLE_HELPER, ROLE_ENTRY, ROLE_VIEW, ROLE_IO } Role;
 typedef struct {
   uint32_t param_count;
   ArgType params[ENTRY_PARAMS_MAX];
+  int list; /* 1 when argument param_count - 1 is a List U256 (S7 Q-S7-2 (a)) */
 } RunCall;
 
 /* A run: the script path, the prelude families, the calls so far, the
@@ -4777,9 +4778,27 @@ static int arg_type(const Value *t, ArgType *out) {
   return t != NULL && (val_is(t, OP_NAT) || val_is(t, OP_FLAG) || val_is(t, OP_U256) || val_is(t, OP_ADDR));
 }
 
+/* 1 when T is List U256: an entry argument in the last position only (S7
+   Q-S7-2 (a)). */
+static int is_u256_list(const Value *t) {
+  return t != NULL && val_is(t, OP_LIST) && t->argc == 1u && val_is(t->args[0], OP_U256);
+}
+
+/* The List U256 of the N script words WORD (S7 Q-S7-2 (a)): cons of the first
+   word and the list of the rest, nil for no words. NULL after a diagnostic. */
+static const Value *list_arg(Machine *m, char *const *word, uint32_t n) {
+  const Value *xs = val_make(m, OP_NIL, 0, 0, NULL, NULL, NULL);
+  for (uint32_t j = n; xs != NULL && j > 0u; j--) {
+    const Value *w = entry_arg(m, word[j - 1u], ARG_TYPE_U256);
+    xs = w != NULL ? val_make(m, OP_CONS, 0, 2, w, xs, NULL) : NULL;
+  }
+  return xs;
+}
+
 /* Entry: (env : Env) -> (s : State) -> ARGS -> Option (Prod State (List Out)).
    View: the same parameters, with a Nat, Flag, U256 or Addr result. Each
-   argument is a Nat, Flag, U256 or Addr. All other definitions are helpers. */
+   argument is a Nat, Flag, U256 or Addr, and the last one can be a List U256
+   (S7 Q-S7-2 (a)). All other definitions are helpers. */
 static Role role_of(Machine *m, const Run *r, const Value *type, RunCall *call) {
   const Value *t = type;
   const Value *p;
@@ -4796,6 +4815,12 @@ static Role role_of(Machine *m, const Run *r, const Value *type, RunCall *call) 
     call->params[call->param_count] = kind;
     t = closure_apply(m, t, val_var(m, call->param_count + 2u));
     call->param_count++;
+  }
+  if (t != NULL && t->kind == VAL_PI && call->param_count < ENTRY_PARAMS_MAX && is_u256_list(t->dom)) {
+    call->params[call->param_count] = ARG_TYPE_U256;
+    t = closure_apply(m, t, val_var(m, call->param_count + 2u));
+    call->param_count++;
+    call->list = 1;
   }
   if (arg_type(t, &kind))
     return ROLE_VIEW;
@@ -4873,10 +4898,14 @@ static int run_call(Machine *m, Run *r, uint32_t line, char *const *word, uint32
   role = role_of(m, r, m->defs[d].type, &call);
   if (role == ROLE_HELPER)
     return diag_fail(m->diag, "EVAL_ENTRY", name, "%s:%u: a helper is not an entry or a view", r->path, line) + 1;
-  if (count - 3u != call.param_count)
+  if (call.list && (count - 3u < call.param_count - 1u || count - 3u - (call.param_count - 1u) > ENTRY_LIST_MAX))
+    return diag_fail(m->diag, "EVAL_ARGS", name, "%s:%u: the call takes %u words and a list of at most %u words, found %u words",
+                     r->path, line, call.param_count - 1u, ENTRY_LIST_MAX, count - 3u) + 2;
+  if (!call.list && count - 3u != call.param_count)
     return diag_fail(m->diag, "EVAL_ARGS", name, "%s:%u: the call takes %u arguments, found %u", r->path, line, call.param_count, count - 3u) + 2;
   for (i = 0; i < call.param_count; i++) {
-    args[i] = entry_arg(m, word[i + 3u], call.params[i]);
+    args[i] = call.list && i + 1u == call.param_count ? list_arg(m, word + i + 3u, count - 3u - i)
+                                                       : entry_arg(m, word[i + 3u], call.params[i]);
     if (args[i] == NULL)
       return strcmp(m->diag->code != NULL ? m->diag->code : "", "EVAL_ARGS") == 0 ? 2 : 1;
   }
@@ -5007,7 +5036,7 @@ static uint32_t split_words(char *line, char **word, uint32_t cap) {
 }
 
 int run_command(Machine *m, const char *path, const char *text, size_t len, FILE *out) {
-  char *word[ENTRY_PARAMS_MAX + 3u];
+  char *word[ENTRY_PARAMS_MAX + ENTRY_LIST_MAX + 3u];
   uint32_t init = find_def(m, "init");
   uint32_t line = 0;
   size_t pos = 0;
@@ -5044,7 +5073,7 @@ int run_command(Machine *m, const char *path, const char *text, size_t len, FILE
     memcpy(copy, text + pos, end - pos);
     copy[end - pos] = '\0';
     line++;
-    count = split_words(copy, word, ENTRY_PARAMS_MAX + 3u);
+    count = split_words(copy, word, ENTRY_PARAMS_MAX + ENTRY_LIST_MAX + 3u);
     if (count != 0u && strncmp(word[0], "--", 2) != 0)
       status = r.open != NULL ? run_answer(m, &r, line, word, count, out) : run_call(m, &r, line, word, count, out);
     pos = end + 1u;

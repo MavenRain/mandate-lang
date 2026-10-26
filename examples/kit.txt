@@ -8,10 +8,12 @@ formers.lang
 functions.lang
 kan.lang
 laws.lang
+listarg.lang
 lists.lang
 map.lang
 monad.lang
 paths.lang
+machine.lang
 precompile.lang
 quot.lang
 residuals.lang
@@ -27,3 +29,4 @@ glue.lang
 univ.lang
 elim.lang
 trace.lang
+mandate.lang

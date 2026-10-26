@@ -24,11 +24,16 @@
 /* The ABI type of a parameter or a result. U256 and ADDR are for the EVM
    kit only (slice K4b): there a word is 32 bytes. */
 typedef enum {
-  IR_SCALAR_NAT,  /* uint64 */
-  IR_SCALAR_FLAG, /* bool */
-  IR_SCALAR_U256, /* uint256 */
-  IR_SCALAR_ADDR  /* address */
+  IR_SCALAR_NAT,      /* uint64 */
+  IR_SCALAR_FLAG,     /* bool */
+  IR_SCALAR_U256,     /* uint256 */
+  IR_SCALAR_ADDR,     /* address */
+  IR_SCALAR_U256_LIST /* uint256[]: an entry parameter in the last position only (S7 Q-S7-2 (a)) */
 } IrScalar;
+
+/* The bound on the length of a uint256[] parameter: ENTRY_LIST_MAX of
+   front/check.h (lower.c checks that the two are equal). */
+#define IR_LIST_WORDS_MAX 256u
 
 typedef enum {
   IR_OP_ADD,       /* the sum modulo 2^64 */
@@ -64,13 +69,14 @@ typedef enum {
 } IrEnv;
 
 typedef enum {
-  IR_EXPR_CONST,  /* value */
-  IR_EXPR_LOCAL,  /* local */
-  IR_EXPR_BINARY, /* op left right */
-  IR_EXPR_LOAD,   /* word number field of the block at address left */
-  IR_EXPR_WORD,   /* the 32-byte big-endian word at word (a U256 or Addr constant) */
-  IR_EXPR_ENV,    /* the IrEnv value field */
-  IR_EXPR_SLOAD   /* the storage word at slot left (EVM SLOAD) */
+  IR_EXPR_CONST,   /* value */
+  IR_EXPR_LOCAL,   /* local */
+  IR_EXPR_BINARY,  /* op left right */
+  IR_EXPR_LOAD,    /* word number field of the block at address left */
+  IR_EXPR_WORD,    /* the 32-byte big-endian word at word (a U256 or Addr constant) */
+  IR_EXPR_ENV,     /* the IrEnv value field */
+  IR_EXPR_SLOAD,   /* the storage word at slot left (EVM SLOAD) */
+  IR_EXPR_CALLDATA /* the call data word at byte offset left (EVM CALLDATALOAD, S7) */
 } IrExprKind;
 
 typedef struct IrExpr IrExpr;

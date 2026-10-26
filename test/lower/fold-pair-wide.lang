@@ -1,0 +1,6 @@
+-- REFUSE_LOWER (S7 s2, Q-S7-5 (a)): a fold over the List U256 argument with an accumulator of 33 words (the limit is 32).
+state State := makeState (tally : U256)
+def init : State := makeState 0u
+
+def wide : (env : Env) -> (s : State) -> (xs : List U256) -> U256 :=
+  fun (env : Env) (s : State) (xs : List U256) => first (fold (fun (x : U256) (a : Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (Prod U256 (U256))))))))))))))))))))))))))))))))) => a) (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (pair 0u (0u))))))))))))))))))))))))))))))))) xs)

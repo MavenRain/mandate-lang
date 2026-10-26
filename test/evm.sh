@@ -19,12 +19,19 @@ mkdir -p "$tmp"
 
 # wantlogs PROG K: one line for each event that `langc run` prints for call K
 # (tmp/run): topic 0 (from the `langc abi` event line, C-K4-16) and the data
-# words. test/abi.expect holds the cast check of the topics.
+# words. test/abi.expect holds the cast check of the topics. When alloc is set
+# (the mock token), each pay line of call K gives the line of the Transfer LOG3
+# of the mock (test/diff.sh lg, S7 s2 O139).
 wantlogs() {
   : >"$tmp/wantlogs"
   build/langc --kit abi "$1" --text >"$tmp/abi" || : >"$tmp/abi"
-  awk -v k="$2" '/^[^ ]/ { p = ($1 == k); next } p && $1 == "event"' "$tmp/run" >"$tmp/events"
+  awk -v k="$2" -v m="${alloc:+1}" '/^[^ ]/ { p = ($1 == k); next } p && ($1 == "event" || (m && $1 == "pay"))' "$tmp/run" >"$tmp/events"
   while read -r _ev _evname _evargs; do
+    if [ "$_ev" = pay ]; then
+      _to=$(echo "${_evargs%% *}" | cut -c3- | tr A-F a-f)
+      echo "$transfer,$(pad "$receiver"),$(pad "$_to") $(pad "$(word "${_evargs#* }")")" >>"$tmp/wantlogs"
+      continue
+    fi
     _topic=$(awk -v n="$_evname" '$3 == "event" && index($2, n "(") == 1 { print substr($1, 3) }' "$tmp/abi")
     _data=
     for _a in $_evargs; do _data=$_data$(pad "$(word "$_a")"); done
@@ -70,6 +77,13 @@ chain() {
       fail=$((fail + 1))
       return
     fi
+    # A set alloc (the mock token, S7 s2 O139): step puts the storage of all
+    # accounts in tmp/raw. Keep only the storage of the receiver (test/diff.sh acct).
+    if [ -n "${alloc:-}" ]; then
+      awk -F'"' -v a="0x$receiver" 'NF == 3 && length($2) == 42 { p = (tolower($2) == a); next }
+        p && NF >= 5 && length($2) == 66 && substr($2, 1, 2) == "0x" { print substr($2, 3), $4 }' "$tmp/dump" >"$tmp/raw"
+      awk '{ v = tolower($2); sub(/^0+/, "", v); print $1, (v == "" ? "0" : v) }' "$tmp/raw" | sort >"$tmp/got"
+    fi
     case $result in
       "out "*) _hex=${result#out }
         [ ${#_hex} -eq 64 ] && result="out $(hexnorm "$_hex")" ;;
@@ -112,6 +126,20 @@ done >>"$tmp/abi.got"
   build/langc --kit abi examples/events.lang --json 2>&1
   echo "exit $?"
 } >>"$tmp/abi.got"
+# S7 s1: a List U256 entry argument is a uint256[] (cast sig 'payList(uint256,uint256[])').
+{
+  echo "# examples/listarg.lang --text"
+  build/langc --kit abi examples/listarg.lang --text 2>&1
+  echo "exit $?"
+} >>"$tmp/abi.got"
+# S7 s2 (O138): the entries of examples/mandate.lang. cast sig gives the same selectors for
+# 'check(uint256[])', 'execute(uint256[])' and
+# 'grant(address,address,address,address,address,uint256,uint256,uint256,uint256,address,uint256,address)'.
+{
+  echo "# examples/mandate.lang --text"
+  build/langc --kit abi examples/mandate.lang --text 2>&1
+  echo "exit $?"
+} >>"$tmp/abi.got"
 if ! cmp -s test/abi.expect "$tmp/abi.got"; then
   echo "FAIL evm abi: the langc abi lines differ from test/abi.expect"
   diff test/abi.expect "$tmp/abi.got" | head -n 6
@@ -126,6 +154,36 @@ chain examples/map.lang test/run/map.script
 chain examples/residuals.lang test/run/residuals.script
 chain examples/events.lang test/run/events.script
 chain examples/lists.lang test/run/lists.script
+# S7 s1: a List U256 entry argument. Then call data that the list prologue of payList must revert: the offset
+# word 0x20 (not 32 N = 0x40), the length 257 (above the bound 256, with 257 items), and a length 3 with 2 items.
+chain examples/listarg.lang test/run/listarg.script
+listrevert() {
+  steps=$((steps + 1))
+  if ! deploy examples/listarg.lang || ! step 1 0x00000000000000000000000000000000000000bb "$(sel 'payList(uint256,uint256[])')$2"; then
+    echo "FAIL evm listarg $1: evm: $(head -n 1 "$tmp/dump")"
+    fail=$((fail + 1))
+  elif [ "$result" != revert ]; then
+    echo "FAIL evm listarg $1: want revert, got $result"
+    fail=$((fail + 1))
+  fi
+}
+listrevert offset "$(pad 1)$(pad 20)$(pad 1)$(pad 7)"
+listrevert length "$(pad 0)$(pad 40)$(pad 101)$(awk 'BEGIN { for (i = 0; i < 257; i++) printf "%064d", 0 }')"
+listrevert short "$(pad 1)$(pad 40)$(pad 3)$(pad 1)$(pad 2)"
+# S7 s2 (O139): examples/mandate.lang. langc run signs the view sig with the chain id
+# 1337 (the domain of the view sig). Thus the mandate chain uses the chain id 1337, and
+# the config of the other chains stays 1. test/mandate-evm.script is
+# test/run/mandate.script with the token 0x..ee in each grant: the token 0x..05 is the
+# modexp precompile, and a precompile ignores alloc code. alloc puts the mock token of
+# test/diff.sh (build/asmtool mock, mode 0) at 0x..ee, thus execute pays the mock.
+build/asmtool mock >"$tmp/mock" || { echo "FAIL evm mandate: asmtool mock"; exit 1; }
+transfer=$(keccak "$(printf '%s' 'Transfer(address,address,uint256)' | od -v -An -tx1 | tr -d ' \n')")
+_config=$config
+config="{\"chainId\":1337,${config#*,}"
+alloc=",\"0x00000000000000000000000000000000000000ee\":{\"balance\":\"0x0\",\"code\":\"0x$(cat "$tmp/mock")\",\"storage\":{}}"
+chain examples/mandate.lang test/mandate-evm.script
+alloc=
+config=$_config
 # test/same-state.lang: the entry ping keeps the state and emits one LOG1 (O-d7-1).
 chain test/same-state.lang test/same-state.script
 

@@ -7,11 +7,12 @@ runs=0
 tmp=${TMPDIR:-/tmp}/langc-run.$$
 mkdir -p "$tmp"
 
-# For each test/run/NAME.script, `langc run examples/NAME.lang` (examples/contract.lang
-# when there is no examples/NAME.lang) must exit 0 and print test/run/NAME.out
-# byte for byte.
+# For each test/run/NAME.script or NAME-PART.script, `langc run examples/NAME.lang`
+# (examples/contract.lang when there is no examples/NAME.lang) must exit 0 and print
+# the .out file of the script (test/run/NAME.out or NAME-PART.out) byte for byte.
 for script in test/run/*.script; do
-  prog=examples/$(basename "${script%.script}").lang
+  name=$(basename "${script%.script}")
+  prog=examples/${name%%-*}.lang
   [ -f "$prog" ] || prog=examples/contract.lang
   status=0
   build/langc --kit run "$prog" "$script" >"$tmp/out" 2>"$tmp/err" || status=$?
@@ -46,6 +47,9 @@ run_refused 1 EVAL_ENTRY examples/contract.lang "1 $caller nope"
 run_refused 1 RUN_INIT examples/entries.lang "1 $caller addPrice 1 2"
 run_refused 1 EVAL_ENTRY examples/map.lang "1 $caller putAll 3"
 run_refused 1 EVAL_ENTRY examples/map.lang "1 $caller allBooks"
+# S7 s1: a List U256 call takes the words before the list, then at most 256 list words (ENTRY_LIST_MAX).
+run_refused 2 EVAL_ARGS examples/listarg.lang "1 $caller payList"
+run_refused 2 EVAL_ARGS examples/listarg.lang "1 $caller payList 1u$(awk 'BEGIN { for (i = 0; i < 257; i++) printf " 1u" }')"
 # S6 s2 part 3: an answer with a different OP, an answer with a wrong word count, and a script that ends at an open operation.
 run_refused 1 RUN_ANSWER examples/precompile.lang "1 $caller askWord 5u
 lookup 6u"

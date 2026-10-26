@@ -47,6 +47,36 @@ Measured on 2026-10-10 at LT 382e224 with geth `evm` 1.14.12: each step of `test
 - Part 1, deposit 30u (one pull) with mode 0, 1, 2, 3 and no code: 73471, 27441, 73459, 27249, 25184. Withdraw 30u (one pay), same order: 80738, 34708, 80726, 34516, 32461.
 - The other 4 scripts of part 2 use the same gas as in `test/evm.sh`.
 
+### The mandate contract (slice S7, O142)
+
+Measured on 2026-10-26 on the S7 work tree (base 17d50a4) with geth `evm` 1.14.12: a copy of `test/diff.sh` runs `test/run/mandate-gas.script` on `examples/mandate.lang` (the mock in mode 0 at 0x..ee, the chain id 1337), and each step again with `evm run --statdump`. The value is the gas of the execution, as above: it does not include the intrinsic gas of a transaction (21000 and the calldata). The grant is 233442. Each spend has a new session and the total 200u, and each spend needs the confirm signature (3 ecrecover calls, the worst case). The gate runs the script with `langc run` (`test/run.sh`), not on the EVM, and does not check the gas.
+
+| Spend | Lines | Merkle depth | `check` | `execute` |
+| --- | --- | --- | --- | --- |
+| gd1Spend | 1 | 1 | 152881 | 364952 |
+| gd2Spend | 1 | 2 | 164484 | 336774 |
+| gd4Spend | 1 | 4 | 187521 | 382848 |
+| gd8Spend | 1 | 8 | 233533 | 474914 |
+| gc2Spend | 2 | 2 | 223120 | 454130 |
+| gc4Spend | 4 | 2 | 340571 | 688948 |
+
+- Each extra Merkle level adds about 11500 gas to `check` and about 23000 to `execute`.
+- Each extra line adds about 58700 gas to `check` and about 117400 to `execute`.
+- The `execute` of gd1Spend is more than the `execute` of gd2Spend. It is the first pay, thus it probably writes storage slots that are zero (the spent amount and the mock balances).
+- The Merkle depth is at most 8 (O15). The bound stays (O143): depth 8 costs 233533 for `check` and 474914 for `execute`.
+
+### Code size (slice S7, O141 and O143)
+
+`build/langc --kit build` (the creation code) and `build/langc --kit build --runtime` (the runtime), on 2026-10-26:
+
+| Program | Creation code (EIP-3860 limit 49152) | Runtime (EIP-170 limit 24576) |
+| --- | --- | --- |
+| `examples/mandate.lang` | 22482 | 22457 (2119 bytes free, 91.4 percent) |
+| `examples/precompile.lang` | 1725 | 1705 |
+
+A large change to `examples/mandate.lang` can go over the EIP-170 limit.
+
 ## Open
+
 
 - A t8n or statetest run with a fixture (two transactions on one pre-state): not done. K4 did not need it: the `run --prestate` path is sufficient for the chain test and the differential test.

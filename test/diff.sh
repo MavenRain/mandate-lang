@@ -15,6 +15,8 @@
 # the pay and pull rows of `langc run`, mod 2^256 (bc, C-K4d-9). It needs evm
 # (go-ethereum), bc, od, build/langc, build/asmtool and build/slottool. Run it
 # from the kit root.
+# S7 s3 (Q-S7-9 (a), O141): part 2 also runs test/mandate-evm.script on
+# examples/mandate.lang (the chain id 1337, the mock at the token 0x..ee).
 set -u
 fail=0
 rows=0
@@ -195,6 +197,13 @@ script examples/map.lang test/run/map.script
 script examples/residuals.lang test/run/residuals.script
 script examples/events.lang test/run/events.script
 script examples/lists.lang test/run/lists.script
+# S7 s3 (Q-S7-9 (a), O141): examples/mandate.lang. The view sig needs the chain id 1337
+# (test/evm.sh, O139). execute pays 450u of the mock token to the merchant 0x..aa, thus
+# the mock balances must equal the pay sums of langc run.
+_config=$config
+config="{\"chainId\":1337,${config#*,}"
+script examples/mandate.lang test/mandate-evm.script
+config=$_config
 
 rm -rf "$tmp"
 echo "diff gate: $rows rows, $fail failures"

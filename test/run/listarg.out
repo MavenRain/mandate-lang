@@ -1,0 +1,15 @@
+1 payList ok
+2 lastSeen = 5u
+3 payList ok
+4 lastSeen = 17u
+5 payList ok
+6 lastSeen = 25u
+7 payList ok
+8 lastSeen = 19u
+9 pairFold = 0u
+10 pairFold = 21u
+11 pairFold = 17u
+12 pairFold trap
+13 countFold = 3u
+14 countFold trap
+state makeState 19u 4u

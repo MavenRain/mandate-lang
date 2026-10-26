@@ -20,6 +20,7 @@ static const char *abi_type(IrScalar s) {
   case IR_SCALAR_FLAG: return "bool";
   case IR_SCALAR_U256: return "uint256";
   case IR_SCALAR_ADDR: return "address";
+  case IR_SCALAR_U256_LIST: return "uint256[]";
   }
   return "uint256";
 }
@@ -29,7 +30,7 @@ const char *evm_abi_type(IrScalar s) {
 }
 
 /* NAME(TYPE,...) with the ABI type of each of the COUNT TYPES: Nat =
-   uint64, Flag = bool, U256 = uint256, Addr = address (an entry, a view or
+   uint64, Flag = bool, U256 = uint256, Addr = address, List U256 = uint256[] (S7) (an entry, a view or
    an event, C-K4c-4). Returns the length, or 0 when it does not fit. */
 static size_t signature_of(char *text, size_t capacity, const char *name, const IrScalar *types, size_t count) {
   int used = snprintf(text, capacity, "%s(", name);
@@ -62,8 +63,9 @@ static EvmBuild event_topic(const IrStmt *s, unsigned char topic[32]) {
 EvmBuild evm_abi_line(const char *kind, const char *name, const IrScalar *types, size_t count, FILE *out) {
   int event = strcmp(kind, "event") == 0;
   size_t name_size = strlen(name);
-  if (name_size > SIZE_MAX - 3u || count > (SIZE_MAX - name_size - 3u) / 8u) return EVM_BUILD_SIZE;
-  size_t capacity = name_size + 3u + 8u * count;
+  /* Each ABI type is at most nine bytes (uint256[], S7), plus its comma. */
+  if (name_size > SIZE_MAX - 3u || count > (SIZE_MAX - name_size - 3u) / 10u) return EVM_BUILD_SIZE;
+  size_t capacity = name_size + 3u + 10u * count;
   char *text = malloc(capacity);
   if (text == NULL) return EVM_BUILD_OOM;
   size_t size = signature_of(text, capacity, name, types, count);
@@ -112,6 +114,7 @@ static unsigned scalar_bits(IrScalar s) {
   case IR_SCALAR_FLAG: return 1;
   case IR_SCALAR_U256: return 256;
   case IR_SCALAR_ADDR: return 160;
+  case IR_SCALAR_U256_LIST: return 256; /* the list words are not in the head (emit_list_head) */
   }
   return 256;
 }
@@ -310,6 +313,10 @@ static int emit_expr(Emit *e, const IrExpr *x) {
     if (!emit_expr(e, x->left)) return 0;
     asm_op(e->a, EVM_OP_SLOAD);
     return 1;
+  case IR_EXPR_CALLDATA: /* a word of a List U256 argument at byte offset LEFT (S7) */
+    if (!emit_expr(e, x->left)) return 0;
+    asm_op(e->a, EVM_OP_CALLDATALOAD);
+    return 1;
   }
   return 0;
 }
@@ -460,9 +467,34 @@ static int emit_block(Emit *e, IrBlock b) {
   return ok;
 }
 
+/* The head of the List U256 argument N - 1 (S7 Q-S7-2 (a)): revert when its
+   offset word is not 32 * N, when its length is above IR_LIST_WORDS_MAX, or
+   when the call data is shorter than 4 + 32 * N + 32 + 32 * length. Then the
+   length goes to local N - 1. The fold reads the words (IR_EXPR_CALLDATA). */
+static void emit_list_head(Asm *a, Label revert, uint64_t n) {
+  asm_push(a, 4u + 32u * (n - 1u));
+  asm_op(a, EVM_OP_CALLDATALOAD);
+  asm_push(a, 32u * n);
+  emit_ops(a, (const Op[]){EVM_OP_EQ, EVM_OP_ISZERO}, 2);
+  asm_jump_if(a, revert);
+  asm_push(a, 4u + 32u * n);
+  emit_ops(a, (const Op[]){EVM_OP_CALLDATALOAD, EVM_OP_DUP1}, 2);
+  asm_push(a, IR_LIST_WORDS_MAX);
+  asm_op(a, EVM_OP_LT);
+  asm_jump_if(a, revert);
+  asm_op(a, EVM_OP_DUP1);
+  asm_push(a, 32u);
+  asm_op(a, EVM_OP_MUL);
+  asm_push(a, 4u + 32u * n + 32u);
+  emit_ops(a, (const Op[]){EVM_OP_ADD, EVM_OP_CALLDATASIZE, EVM_OP_LT}, 3);
+  asm_jump_if(a, revert);
+  emit_store(a, 32u * (n - 1u));
+}
+
 /* Entry FN at label LABEL (C-K4b-1): pop the selector, revert on call data
    shorter than 4 + 32 * N, store argument word k at local k after the
    dirty-bit check (C-K4-6: a dirty word gives the empty REVERT), then the
+   list head when argument N - 1 is a List U256 (emit_list_head), then the
    body. The body of a view ends in RETURN (C-K4-10). Returns 0 on an IR
    form that the EVM back end does not lower. */
 static int evm_entry(Emit *e, const IrFunc *fn, Label label) {
@@ -476,7 +508,9 @@ static int evm_entry(Emit *e, const IrFunc *fn, Label label) {
   asm_push(a, 4u + 32u * (uint64_t)fn->param_count);
   emit_ops(a, (const Op[]){EVM_OP_CALLDATASIZE, EVM_OP_LT}, 2);
   asm_jump_if(a, e->revert);
-  for (size_t k = 0; k < fn->param_count; k++) {
+  int list = fn->param_count > 0 && fn->params[fn->param_count - 1] == IR_SCALAR_U256_LIST;
+  size_t words = fn->param_count - (size_t)list;
+  for (size_t k = 0; k < words; k++) {
     unsigned bits = scalar_bits(fn->params[k]);
     asm_push(a, 4u + 32u * (uint64_t)k);
     asm_op(a, EVM_OP_CALLDATALOAD);
@@ -488,6 +522,7 @@ static int evm_entry(Emit *e, const IrFunc *fn, Label label) {
     }
     emit_store(a, 32u * (uint64_t)k);
   }
+  if (list) emit_list_head(a, e->revert, (uint64_t)fn->param_count);
   return emit_block(e, fn->body);
 }
 

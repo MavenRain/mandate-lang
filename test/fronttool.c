@@ -414,6 +414,10 @@ int main(void) {
                "(brNext : ((fun (T : Type 0) => Lab) (Br A)) -> Br A)", NULL);
   ok &= domain("cofamily Hi (A : Type 1) := hiCorec (hiOut : A) "
                "(hiType : Type 0 -> Hi A) (hiNat : Nat -> Hi A)", NULL);
+  /* S7 (Q-S7-3 (a)): a List U256 label is closed data. A List A label
+     refers to the parameter, so it is not closed. */
+  ok &= domain("cofamily Mach (A : Type 0) := machCorec (machOut : A) (machStep : List U256 -> Mach A)", NULL);
+  ok &= domain("cofamily Mach (A : Type 0) := machCorec (machOut : A) (machStep : List A -> Mach A)", "REFUSE_CELL");
   ok &= domain("cofamily Dep (A : Type 0) := depCorec (depOut : A) "
                "(depNext : Path A depOut depOut -> Dep A)", "REFUSE_CELL");
   ok &= domain("def U : Type 1 := Type 0\n"

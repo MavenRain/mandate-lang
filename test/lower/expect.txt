@@ -13,3 +13,7 @@ path-word.lang REFUSE_LOWER
 loop-word.lang REFUSE_LOWER
 orbit-word.lang REFUSE_LOWER
 glue-word.lang REFUSE_LOWER
+list-not-last.lang REFUSE_LOWER
+list-outside-fold.lang REFUSE_LOWER
+fold-pair-wide.lang REFUSE_LOWER
+fold-discard.lang REFUSE_LOWER
