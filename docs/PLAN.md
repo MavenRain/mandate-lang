@@ -207,6 +207,12 @@ questions):
   the S9 s3 gate (O205). s4 is DONE and STAGED, and S9 is DONE; the row
   with the real verifier stays BLOCKED (O178). The USER commits. The
   next step is S10 (mandate-lang-work/S10-kickoff-PROMPT.md).
+- 2026-10-27 (S10 kickoff, claude7): the USER commit 0703e66 (S9 s4) is
+  in HEAD. The fresh gate gives EXIT 0 and the same result as the S9 s4
+  gate (O208). The S10 plan: the mutant method (O209), the mutants of
+  the S8 rows (O210) and of the S9 rows (O211), and the sessions s1 to
+  s3 (O212). Q-S10-1 to Q-S10-4 RULED (a). The USER commits. The next
+  step is S10 s1 (mandate-lang-work/S10-s1-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -626,7 +632,7 @@ call (S9).
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | DONE 2026-10-26, STAGED (the close O206: the final gate EXIT 0, O205; base dcf6fc8; kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; s1 DONE 2026-10-26, COMMITTED f972a4f, O180 to O188; s2 DONE 2026-10-26, COMMITTED 97c8a8a, O189 to O194, Q-S9-5 and Q-S9-6 RULED (a); s3 DONE 2026-10-26, COMMITTED dcf6fc8, O195 to O202, Q-S9-7 RULED (a), Q-S9-8 to Q-S9-13 default (a) taken; s4 DONE 2026-10-26, O203 to O206, Q-S9-14 and Q-S9-15 default (a) taken; the row with the real verifier BLOCKED, O178) |
-| S10 | Mutants and close | PLANNED |
+| S10 | Mutants and close | IN PROGRESS (kickoff 2026-10-27: O207 to O213, the fresh gate EXIT 0, O208; base 0703e66; Q-S10-1 to Q-S10-4 RULED (a); the sessions s1 to s3, O212; the row with the real verifier BLOCKED, O178) |
 
 ## 10. Open items
 
@@ -2246,6 +2252,106 @@ call (S9).
   of O200 stays for each change to examples/mandate.lang. The next step
   is S10 (section 9: the mutants of the S8 and S9 rows, O177),
   mandate-lang-work/S10-kickoff-PROMPT.md.
+- O207 (S10 kickoff, the base): the Step 0 of the kickoff found HEAD
+  0703e66 (the USER S9 s4 commit on dcf6fc8) with the tree 0d91511a of
+  the s4 stage, and an empty `git status --short`. 0703e66 is the S10
+  base.
+- O208 (S10 kickoff, the fresh gate): mandate-lang-work/S10-k.sh (log
+  S10-k-gate.log, S10-k.txt): EXIT 0 in 723 s, FINAL SAME AS S9 S4
+  FINAL: each result line is the same as in the S9 s4 gate. The repo
+  diff sha is the same after the gate. The S9 s4 counts are the S10 base
+  counts.
+- O209 (S10 kickoff, the mutant method, O106, O140, Q-S10-1 (a), Q-S10-2
+  (a)): each mutant runs in a scratch tree under $TMPDIR (a `git
+  archive` copy of HEAD, or a copy of the working tree when the session
+  has new rows); the main checkout does not change. A mutant is one `sd
+  -F` edit of one site, with the count 1 checked before the edit and a
+  copy of the original file. Before each edit, build the unmodified
+  scratch tree and run the killing script: both must exit 0. The build
+  is `make -B -j 2 build/langc build/asmtool build/slottool` (make 3.81
+  compares mtimes to the second, thus -B); test/evm.sh and test/diff.sh
+  need build/slottool through test/evmchain.sh. After the edit, repeat
+  the build and the killing script. KILLED: a FAIL line for a reachable
+  result row that passed on the unmodified tree. A missing tool or a
+  setup failure is inconclusive, not a kill. When the script does not
+  kill the mutant, `make -k -B -j 2 check` runs, and a FAIL line of
+  another result row is a kill by that row after the same row passes on
+  the unmodified tree. Any other nonzero exit is investigated before a
+  KILLED or SURVIVED result is recorded. A
+  build stop is not a kill (the TRAP of O140: a `||` mutant in a `&&`
+  chain needs parentheses). A mutant of examples/mandate.lang that goes
+  over the bound of O200 (EIP-170 or 2048 labels) is a build stop:
+  change the mutant. After each mutant, the original file goes back and
+  `cmp` checks it. A SURVIVED mutant gets a new row in the same session,
+  then the mutant runs again (the model of S7 s2 resume 4).
+- O210 (S10 kickoff, the mutants of the S8 rows, O148, O150, O166): each
+  site is a hypothesis that s1 checks in examples/mandate.lang (the defs
+  `check` and `execute`). G1a: the session compare of the cred check
+  (WRONG_SESSION, 5u) goes out; killing row test/run/mandate-g1.script.
+  G2a: the price goes out of the leaf hash; killing row the
+  changed-price row (NO_PATH, 2u) of test/run/mandate-g2.script. G2b:
+  the payee compare (WRONG_MERCHANT, 3u) goes out; killing row the
+  changed-payee row of test/run/mandate-g2.script. G3a: the `autoLimit`
+  compare changes from at or below to below; killing row a residual row
+  of test/run/mandate-g3.script with the total at `autoLimit` (s1 checks
+  that the row exists, else a new row). G3b: the confirm sig check
+  (NEED_CONFIRM, 8u) goes out; killing row the residual row above
+  `autoLimit` with no valid confirm sig. R1: the spent check (REPLAY,
+  9u) goes out; killing row row 4 of test/run/mandate-honest.script. X1:
+  the payer and the payee of the pay in `execute` change places; killing
+  row test/run/mandate-x402.script (test/run.sh and part 2 of
+  test/diff.sh).
+- O211 (S10 kickoff, the mutants of the S9 rows, O173, O176, O182 to
+  O187, O192 to O198, Q-S10-3 (a)): each site is a hypothesis that s2
+  checks. L1: src/lower.c, the STUCK value of policyVerify: two input
+  words change places; killing row the correct-proof kit row of O187
+  (test/precompile.sh). L2: src/evm.c, IR_STMT_VERIFY: a failed
+  STATICCALL reverts instead of returning flagNo. s2 first adds a
+  reverting verifier alloc and a verifyPolicy call that expects 0 in
+  test/precompile.sh, then uses that row as the killing row. The direct
+  `evm run` of the mock with 160 input bytes only tests the mock's
+  revert; it does not exercise policyVerify's handling of a failed
+  call. The policy path in lower.c has no revert to remove (O173).
+  E1: src/evm.c, IR_STMT_VERIFY: the final EVM_OP_AND of the three-way
+  success, return-length and return-word test changes to EVM_OP_OR;
+  killing row the wrong-proof kit row. This path has no ISZERO after
+  STATICCALL. E2: src/evm.c, the input
+  length of the STATICCALL is one word less; killing row the
+  correct-proof kit row. H1: src/front/eval.c, the host rule of O186:
+  the address test of 0x..ef goes out; killing row the NO_POLICY row
+  with an address with no code (test/run/mandate.script, O196). H2: the
+  host rule: the proof compare goes out; killing row the NO_POLICY row
+  with a changed word. H3: src/front/eval.c, policy_verify: the
+  `!m->policy_mock` guard goes out, so a closed call converts in
+  checking; killing row a closed-call PATH_END refusal that s2 finds
+  (else a new row). P1: the `prove` handler of `langc run`: the
+  RUN_ANSWER refusal goes out; killing row run_refused `prove 1u 2u`
+  (exit 1) of test/run.sh. P2: the EVAL_ARGS refusal goes out; killing
+  row run_refused `prove 0xzz` (exit 2). D1: examples/mandate.lang, the
+  decoder proof tail (O195): the length word L is not read; killing row
+  the ok rows 39 and 40 of test/run/mandate.script. D2: the offset of
+  the proof tail is one word more; killing row the ok rows 39 and 40.
+  N1: the NO_POLICY test: the policyVerify result is not used; killing
+  row the NO_POLICY row with a changed word. N2: the test of the
+  verifier 0 (no call) inverts; killing row rows 1 to 38 of
+  test/run/mandate.script. A1: test/diff.sh, the alloc of the mock
+  verifier at 0x..ef goes out; killing row the ok rows of the
+  differential (O197: the evm side gives 10u). A2: test/evm.sh, the same
+  alloc; killing row the ok rows of test/mandate-evm.script. K1: the
+  asmtool mock verifier (O183, O184): the mock rule changes one word of
+  the proof; killing row the differential and the kit rows.
+- O212 (S10 kickoff, the sessions, Q-S10-4 (a)): s1 the mutants of O210
+  and the rows for SURVIVED mutants; s2 the mutants of O211 and their
+  rows; s3 the docs (the section "The mutants (S10)" in
+  docs/VALIDATION.md), the final gate and the close of the plan. The row
+  with the real verifier stays BLOCKED (O178) after the close; a later
+  slice can open the plan again for it. Each session has a gate. A
+  session with new rows gives FINAL DIFFERS, and each GATE DIFF line
+  must be a new row.
+- O213 (S10 kickoff, the PLAN lines): mandate-lang-work/S10-k-plan.pl
+  writes the section 1 bullet, the S10 row of section 9, O207 to O213
+  and Q-S10-1 to Q-S10-4 after the fresh gate, because these lines give
+  the gate result. The kickoff changes only docs/PLAN.md.
 
 ## 11. Questions for the USER (S1)
 
@@ -2626,3 +2732,22 @@ AskUserQuestion: all (a).
   the O rows after the final gate, because they give the gate result;
   docs.pl changes only docs/VALIDATION.md; (b) docs.pl writes them
   before the gate. Default (a) taken (O204).
+- Q-S10-1 (O209, kickoff 2026-10-27): the run of each mutant. (a) `make
+  -B -j 2 build/langc build/asmtool build/slottool`, then the test script
+  of the killing row, first on the unmodified scratch tree and then on
+  the mutant; `make -k -B -j 2 check` only for a mutant that the script
+  does not kill. RECOMMENDED. (b) `make -k -B -j 2 check` for each
+  mutant (the method of S6 and S7, about 15 min for each mutant). RULED
+  (a).
+- Q-S10-2 (O209): a SURVIVED mutant. (a) a new row that kills it in the
+  same session, then the mutant runs again (the model of S7 s2 resume
+  4). RECOMMENDED. (b) record it as SURVIVED, with no new row. RULED
+  (a).
+- Q-S10-3 (O211): the test harness. (a) mutants of src/,
+  examples/mandate.lang, the two allocs of the mock verifier
+  (test/diff.sh, test/evm.sh) and the asmtool mock. RECOMMENDED. (b)
+  mutants of src/ and examples/mandate.lang only. RULED (a).
+- Q-S10-4 (O212): the close. (a) s3 closes the plan; the row with the
+  real verifier stays BLOCKED (O178), and a later slice can open the
+  plan again for it. RECOMMENDED. (b) S10 closes the mutants only; the
+  plan stays open until the row is done. RULED (a).
