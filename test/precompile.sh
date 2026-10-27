@@ -103,6 +103,10 @@ else
   call "out 1" verifyPolicy "0x$ver" 1u 2u 3u 4u 5u "$pf"
   call "out 0" verifyPolicy "0x$ver" 1u 2u 3u 4u 5u 9u
   call "out 0" verifyPolicy 0x00000000000000000000000000000000000000ab 1u 2u 3u 4u 5u "$pf"
+  # S10 s2 (O211, L2): the verifier at 0x..ac reverts (PUSH0 PUSH0 REVERT). The STATICCALL fails,
+  # and the op gives 0. The op does not revert.
+  alloc="$alloc,\"0x00000000000000000000000000000000000000ac\":{\"balance\":\"0x0\",\"code\":\"0x5f5ffd\",\"storage\":{}}"
+  call "out 0" verifyPolicy 0x00000000000000000000000000000000000000ac 1u 2u 3u 4u 5u "$pf"
   alloc=
   # The mock reverts when the call data is not 192 bytes: a direct `evm run` of the five words
   # only (160 bytes). The op always sends 192 bytes (O181, D2b), so it cannot make this call.

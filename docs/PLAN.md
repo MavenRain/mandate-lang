@@ -219,6 +219,12 @@ questions):
   and G3a by the new rows test/run/mandate-g2b.script and
   test/run/mandate-g3a.script. The s1 gate gives EXIT 0 (O219). The USER
   commits. The next step is S10 s2 (mandate-lang-work/S10-s2-PROMPT.md).
+- 2026-10-27 (S10 s2, claude7): the USER commit 4932ed1 (S10 s1) is in
+  HEAD (O221). The 16 mutants of O211 are KILLED (O222 to O225): 14 by
+  the S9 rows, and L2 and H3 by two new rows (a verifier that reverts in
+  test/precompile.sh, and test/check/policy-closed-call.lang). The s2
+  gate gives EXIT 0 (O226). The USER commits. The next step is S10 s3
+  (mandate-lang-work/S10-s3-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -638,7 +644,7 @@ call (S9).
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | DONE 2026-10-26, STAGED (the close O206: the final gate EXIT 0, O205; base dcf6fc8; kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; s1 DONE 2026-10-26, COMMITTED f972a4f, O180 to O188; s2 DONE 2026-10-26, COMMITTED 97c8a8a, O189 to O194, Q-S9-5 and Q-S9-6 RULED (a); s3 DONE 2026-10-26, COMMITTED dcf6fc8, O195 to O202, Q-S9-7 RULED (a), Q-S9-8 to Q-S9-13 default (a) taken; s4 DONE 2026-10-26, O203 to O206, Q-S9-14 and Q-S9-15 default (a) taken; the row with the real verifier BLOCKED, O178) |
-| S10 | Mutants and close | IN PROGRESS (kickoff 2026-10-27: O207 to O213, the fresh gate EXIT 0, O208; base 0703e66; Q-S10-1 to Q-S10-4 RULED (a); the sessions s1 to s3, O212; the row with the real verifier BLOCKED, O178; s1 2026-10-27: O214 to O220, the 7 S8 mutants KILLED, 2 of them by new rows, the s1 gate EXIT 0, O219) |
+| S10 | Mutants and close | IN PROGRESS (kickoff 2026-10-27: O207 to O213, the fresh gate EXIT 0, O208; base 0703e66; Q-S10-1 to Q-S10-4 RULED (a); the sessions s1 to s3, O212; the row with the real verifier BLOCKED, O178; s1 2026-10-27: O214 to O220, the 7 S8 mutants KILLED, 2 of them by new rows, the s1 gate EXIT 0, O219; s2 2026-10-27: O221 to O227, the 16 S9 mutants KILLED, 2 of them by new rows, the s2 gate EXIT 0, O226) |
 
 ## 10. Open items
 
@@ -2424,6 +2430,87 @@ call (S9).
   the s1 gate, because these lines give the gate result. s1 changes
   docs/PLAN.md and test/diff.sh, and adds the 4 files of the two new
   rows.
+- O221 (S10 s2, the base): the Step 0 of s2 found HEAD 4932ed1 (the USER
+  S10 s1 commit on 94de313) with the tree 5266a936 and an empty `git
+  status --short`. s2 part 1 (the survey, the sites and the spec of 14
+  mutants) halted at the context hand-off with no repo edit; s2 resume
+  did the rest. 4932ed1 is the s2 base.
+- O222 (S10 s2, the sites of O211): mandate-lang-work/S10-s2-spec.txt
+  has the file, the count, the killing script, the key and the old and
+  new text of each mutant. L1: in src/lower.c, the first two fields of
+  the STUCK value change places. E1: the last EVM_OP_AND of the
+  three-way test changes to EVM_OP_OR. E2: the input length of the
+  STATICCALL is one word less; src/evm.c has the same two lines also for
+  LOG1, thus the old text has a third line, and the count is 1. K1: the
+  asmtool mock reads 4 words, not 5. H1 and H2: the memcmp of the
+  address and of the proof digest has the length 0. H3: the
+  `!m->policy_mock ||` guard goes out. P1 and P2: the sites are the
+  generic run_answer of src/front/check.c (all IO ops), not a handler
+  for `prove` only. D1 and D2: the fold step of the decoder (in check
+  and in execute, thus the count 2); pos 0 is L and pos 1 is p. D1: the
+  L write does not occur (flagNo); D2: the p write occurs at pos 2. N1:
+  the NO_POLICY guard (`flagNo flagYes` to `flagNo flagNo`). N2: the
+  test of the verifier 0 inverts. A1 and A2: the alloc of the mock
+  verifier goes out of test/diff.sh and of test/evm.sh. L2: after the
+  STATICCALL, DUP1, ISZERO and a jump to the revert label.
+- O223 (S10 s2, the mutant run): mandate-lang-work/S10-s2-mut.sh (from
+  S10-s1-mut.sh; results in S10-s2-mut.txt) reads the spec file, counts
+  and edits the old text as one string over the whole file (perl), keeps
+  a pristine copy of the tree and puts back only the edited file (`cmp`
+  checks it). The original run rebuilt the unmodified tree before
+  each edit (`make -B -j 2 build/langc build/asmtool build/slottool`),
+  but ran each killing script only on first use (exit 0, no FAIL line,
+  no key). Reusing that script baseline did not meet O209, which
+  requires a fresh run before each edit. During review, all 16 mutants
+  were rerun in separate scratch trees: a fresh unmodified build and
+  passing killing script, the edit with the count checked, then the
+  build and the same killing script. All 16 were KILLED by result rows
+  that passed on their own fresh baselines. Each original file was
+  restored and checked with `cmp` after its mutation.
+  Results: L1, E2 and K1 KILLED by the correct-proof row of
+  test/precompile.sh (want out 1, got out 0). E1 KILLED by the
+  wrong-proof row and the row of 0x..ab (want out 0, got out 1). H1 and
+  H2 KILLED by test/run/mandate.script (and by
+  test/run/precompile.script and test/run/precompile-proof.script). P1
+  KILLED by run_refused `prove 1u 2u` of test/run.sh (exit 0, not 1 and
+  RUN_ANSWER). P2 KILLED by run_refused `prove 0xzz` (exit 1, not 2 and
+  EVAL_ARGS). N1, D1 and D2 KILLED by test/run/mandate.script. N2: the
+  first run gave INCONCLUSIVE, because the new text holds the old text;
+  the runner now wants the count of the old text in the new text for
+  each edit. The rerun of N2: KILLED by test/run/mandate.script and 6
+  more scripts of test/run (7 FAIL lines). A1 KILLED by test/diff.sh (5
+  FAIL lines; test/mandate-evm.script line 21: want out 0, got out a).
+  A2 KILLED by test/evm.sh (7 FAIL lines; the same line 21). L2 and H3
+  KILLED by the new rows (O224, O225).
+- O224 (S10 s2, L2): on HEAD, no row kills L2, because no verifier
+  reverts. The new row in test/precompile.sh (Q-S10-2 (a)): the verifier
+  at 0x..ac has the code 0x5f5ffd (PUSH0 PUSH0 REVERT), and
+  `verifyPolicy` of the address 0x..ac with the true proof must give out
+  0. With the mutant, the op reverts (FAIL precompile verifyPolicy: want
+  out 0, got revert).
+- O225 (S10 s2, H3): the PATH_END row
+  test/check/policy-proof-forged.lang has the open values s and c, thus
+  the H3 mutant does not reach it, and no test has a closed policyVerify
+  call. The new row test/check/policy-closed-call.lang (Q-S10-2 (a)):
+  `closedCall : Path Flag (policyVerify 0x..ef 1u 2u 3u 4u 5u PF)
+  flagYes := refl` with PF the true proof (`asmtool proof 1 2 3 4 5`).
+  The row is in test/check/kit.txt and in test/check/expect.txt
+  (PATH_END). On HEAD, `langc --kit check` refuses it with PATH_END;
+  with the mutant, it gives exit 0 (FAIL policy-closed-call.lang: want
+  exit 1 and PATH_END, got exit 0).
+- O226 (S10 s2, the s2 gate): mandate-lang-work/S10-s2.sh (log
+  S10-s2-gate.log, S10-s2.txt): EXIT 0 in 863 s (the mutant run was
+  active in its scratch tree at the same time), FINAL DIFFERS with 4
+  GATE DIFF lines: `check refusals: 185 checked` changes to `186
+  checked` (the H3 row), and `precompile: 31 steps checked` changes to
+  `32 steps checked` (the L2 row), with 0 failures. The repo diff sha is
+  the same after the gate.
+- O227 (S10 s2, the PLAN lines): mandate-lang-work/S10-s2-plan.pl writes
+  the section 1 bullet, the S10 row of section 9 and O221 to O227 after
+  the s2 gate and the mutant run, because these lines give their
+  results. s2 changes docs/PLAN.md, test/precompile.sh,
+  test/check/kit.txt and test/check/expect.txt, and adds
+  test/check/policy-closed-call.lang.
 
 ## 11. Questions for the USER (S1)
 

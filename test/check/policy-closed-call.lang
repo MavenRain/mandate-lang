@@ -1,0 +1,2 @@
+-- S10 s2 refusal (PATH_END, O211, H3): a closed policyVerify call with the true proof of the words 1 to 5. The checker keeps policyVerify opaque also when all 7 arguments are closed. Thus refl is not a path to flagYes.
+def closedCall : Path Flag (policyVerify 0x00000000000000000000000000000000000000ef 1u 2u 3u 4u 5u 0xdc8004ddf654dce8070ef349963c6c9651b39f78359bf96b519811e811f03060u) flagYes := refl

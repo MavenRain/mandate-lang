@@ -183,3 +183,4 @@ confirm-no-case.lang TYPE_MISMATCH
 lookup-user.lang TYPE_MISMATCH
 policy-proof-forged.lang PATH_END
 policy-ok-verifier.lang TYPE_MISMATCH
+policy-closed-call.lang PATH_END

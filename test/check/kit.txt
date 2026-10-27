@@ -105,3 +105,4 @@ confirm-no-case.lang
 lookup-user.lang
 policy-proof-forged.lang
 policy-ok-verifier.lang
+policy-closed-call.lang
