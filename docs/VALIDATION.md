@@ -93,3 +93,76 @@ The contract of PLAN section 7 has no `isValidSignature` entry. Thus we
 expect that the token refuses an EIP-3009 signature of a user that has
 the delegate. No row tests this (O150). The x402 route of this repo stays
 `check` plus `execute`.
+
+## The zkpolicy condition (S9)
+
+The S9 rows test the policy check of PLAN 4.9 with a mock verifier (O173
+to O176). The real verifier of zkpolicy-lang is not available. Thus one
+row is BLOCKED (the end of this section).
+
+The mock rule (O183, O184, O186):
+
+- The mock verifier is at the address 0x..ef, next to the token mock
+  0x..ee. `build/asmtool verifier` prints its runtime.
+- The five words of 4.9 are a to e: `policyId`, the domain, the mandate
+  `id`, the session id `sid` and the cart hash. The mock key K is the
+  ASCII bytes "mandate-mock" in one word.
+- The proof word p is correct when it is keccak256 of the 192 bytes K,
+  a, b, c, d, e. `build/asmtool proof A B C D E` prints the correct proof
+  word.
+- The mock reverts when the call data is not 192 bytes. Else it returns
+  the word 1 (a correct proof) or 0.
+- The kit op `policyVerify v a b c d e p` makes one STATICCALL to v with
+  the five words and p. It gives flagYes only when the call succeeds, the
+  return data is 32 bytes and the word is 1. Else it gives flagNo. A
+  failed call does not revert.
+- On `langc run`, the host gives flagYes only when v is 0x..ef and p is
+  the correct proof word. The type checker and the lowering keep each
+  call opaque. Thus a `PolicyProof` term comes only from the `prove`
+  operation at run time.
+
+| Slice | Row | Form | Result |
+|---|---|---|---|
+| s1 (O173) | `precompile.script` row 11 and `test/precompile.sh` | `verifyPolicy` at 0x..ef with the proof of the words 1 to 5 | flagYes (1) |
+| s1 (O173) | `precompile.script` row 12 and `test/precompile.sh` | `verifyPolicy` at 0x..ef with the word 9 | flagNo (0) |
+| s1 (O173) | `precompile.script` row 13 and `test/precompile.sh` | `verifyPolicy` at 0x..ab (no code: the call succeeds with no return data) | flagNo (0) |
+| s1 (O173) | `test/precompile.sh` | A direct `evm run` of 160 bytes to the mock | revert |
+| s2 (O174) | `precompile-proof.script` row 1 | `prove` gives the correct proof word | ok: the continuation gets the `PolicyProof` |
+| s2 (O174) | `precompile-proof.script` rows 2 to 4 | `prove` gives a wrong word (1u), the proof of another session (the sid 102u) or the proof of another cart (the cart hash plus 1) | revert: no `PolicyProof`, and the continuation does not run |
+| s2 (O174) | `precompile-proof.script` row 5 | `askProofN` at `nMandate` (the verifier 0x..ab, no code) with the correct proof word | revert |
+| s2 (O174) | `test/run.sh`, the refused runs | The answer `prove 1u 2u` (two words) and the answer `prove 0xzz` (not a word) | RUN_ANSWER (exit 1) and EVAL_ARGS (exit 2), before the continuation |
+| s2 (O174) | `test/check/policy-proof-forged.lang` | `pack 0u refl` as a `PolicyProof`, with no `prove` | The type checker refuses it (PATH_END) |
+| s2 (O174) | `test/check/policy-ok-verifier.lang` | `unit` as the `PolicyOk` of a mandate with the verifier 0x..ef | The type checker refuses it (TYPE_MISMATCH) |
+| s3 (O176) | `mandate.script` rows 20 and 21 | `grant` with the verifier 0x..ef, then `check` with the correct proof (L 32u) | ok, then 0u |
+| s3 (O176) | `mandate.script` rows 22 to 25 | `check` with no proof (L 0u), a changed proof word, the proof of another cart (the cart hash plus 1) and the proof of another session (12u) | NO_POLICY (10u) |
+| s3 (O176) | `mandate.script` row 26 | `check` with the length word 31u (not 0u and not 32u) | BAD_CALLDATA (11u) |
+| s3 (O176) | `mandate.script` rows 27 and 28 | `grant` with the verifier 0x..ab (no code), then `check` with the correct proof | ok, then NO_POLICY (10u) |
+| s3 (O176) | `mandate.script` rows 33 and 34 | `grant` with the verifier 0x..ef, then the honest `execute` with the correct proof | ok, then the `pay` line and the `Spent` event of S7 |
+
+The scripts of the s1 and s2 rows are in `test/run/`. `test/run.sh` runs
+them on `langc --kit run`. `test/precompile.sh` runs the s1 rows on `evm`
+with the mock verifier at 0x..ef in the alloc (O187).
+
+The s3 rows are in `test/run/mandate.script` and in
+`test/mandate-evm.script`, with the same row numbers. `test/run.sh` runs
+them on `langc --kit run`. Part 2 of `test/diff.sh` runs them on `evm`,
+and `test/evm.sh` runs `test/mandate-evm.script` on a chain. Both put the
+mock verifier at 0x..ef in the alloc (O197). The call data of `check` and
+`execute` ends with the proof tail: the proof word p, then the length
+word L (Q-S9-7 (a)). A row with no verifier has the tail 0u 0u, and the
+contract does not call a verifier.
+
+The row with the real verifier is BLOCKED (O178, Q-S1-3 (a)). It waits
+for two items:
+
+- zkpolicy-lang P10, its EVM verifier. P10 is not started; it waits for
+  zkml-lang Z9.
+- The mandate instance of 4.9: the words in limbs, the cart binding by
+  keccak in the circuit, and the approving decision.
+
+P10 alone does not close the row. The row needs three results: an
+approving proof that succeeds, a valid proof of a denying decision that
+gives NO_POLICY, and the proof of an approved cart with another cart that
+gives NO_POLICY. If the P10 verifier has another call form, the kit op
+changes (O29). S9 closes without this row (Q-S9-4 (a)). The mutants of
+the S8 and S9 rows come in S10 (PLAN section 9).

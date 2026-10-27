@@ -193,6 +193,20 @@ questions):
 - 2026-10-26 (S9 s1, claude7): the kit op policyVerify and the mock
   policy verifier are done (O173, O180 to O188). The s1 gate gives
   EXIT 0. The next step is S9 s2 (mandate-lang-work/S9-s2-PROMPT.md).
+- 2026-10-26 (S9 s2, claude7): the USER commit f972a4f (S9 s1) is in
+  HEAD. `PolicyProof`, `PolicyOk` and the `prove` operation are done
+  (O174, O189 to O194). The s2 gate gives EXIT 0. The next step is S9 s3
+  (mandate-lang-work/S9-s3-PROMPT.md).
+- 2026-10-26 (S9 s3, claude7): the USER commit 97c8a8a (S9 s2) is in
+  HEAD. The proof tail, the policy call and the NO_POLICY rows are done
+  (O175, O176, O195 to O202). The s3 gate gives EXIT 0. The next step is
+  S9 s4 (mandate-lang-work/S9-s4-PROMPT.md).
+- 2026-10-26 (S9 s4, claude7): the USER commit dcf6fc8 (S9 s3) is in
+  HEAD. docs/VALIDATION.md has the section of the zkpolicy condition
+  (O177, O204). The final S9 gate gives EXIT 0 and the same result as
+  the S9 s3 gate (O205). s4 is DONE and STAGED, and S9 is DONE; the row
+  with the real verifier stays BLOCKED (O178). The USER commits. The
+  next step is S10 (mandate-lang-work/S10-kickoff-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -611,7 +625,7 @@ call (S9).
 | S6 | `Session`, `Cred s`, `Confirmed`, `Gate`, `Spend`; `IO` and its operations; the run scripts | DONE 2026-10-25, STAGED (the close: 8 of 8 mutants KILLED, M1 after the new wrong-OP run row of the USER ruling (a); the host README run output text; gate GREEN, run refusals 14, the other counts the s2 part 3 counts; O106 and O107); s2 part 3 DONE 2026-10-25 (O102 to O105: the answer form of `langc run` (the role ROLE_IO, the code RUN_ANSWER), the IO entries `askWord` and `askConfirm`, the run rows; gate GREEN, runs 6, run refusals 13, the other counts the s2 part 2 counts); s2 part 2 DONE 2026-10-25 (O98 to O101: the Flag elim, the `Sig` response of `confirm`, the guest defs `show`, `lookup`, `confirm` and `submit`; gate GREEN, check refusals 182, evals 165; Q-S6-7 (a) and Q-S6-8 (a) RULED); s2 part 1 DONE 2026-10-25 (O95 to O97: the R1 field rule, `IO` in domain/domain.lang, 3 domain rows; gate GREEN, the s1 counts); s1 DONE 2026-10-25 (O90 to O94; gate GREEN, check refusals 179, evals 163, precompile 27 steps); base 0fb3760 (O85); `Session` HAVE from S5 s2 (O81); probes O86 to O89; Q-S6-1 (a), Q-S6-2 (a), Q-S6-3 (a) and Q-S6-4 (b) RULED; Q-S6-5 (a) and Q-S6-6 (a) RULED in s1; four sessions: s1 the kit op `u256Mul`, `Lt`, `total`, `Cred s`, `Confirmed`, `Gate` (a `Sum`), `Spend`, the test-key mandate, the refusal rows; s2 part 1 the R1 field rule and `IO` in domain/domain.lang; s2 part 2 the Flag elim and the guest defs of the operations; s2 part 3 the answer form of `langc run`, the run rows; the close; kickoff gate EXIT 0 with the S5 counts |
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
-| S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | IN PROGRESS (kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; s1 DONE 2026-10-26, O180 to O188; the row with the real verifier BLOCKED, O178) |
+| S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | DONE 2026-10-26, STAGED (the close O206: the final gate EXIT 0, O205; base dcf6fc8; kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; s1 DONE 2026-10-26, COMMITTED f972a4f, O180 to O188; s2 DONE 2026-10-26, COMMITTED 97c8a8a, O189 to O194, Q-S9-5 and Q-S9-6 RULED (a); s3 DONE 2026-10-26, COMMITTED dcf6fc8, O195 to O202, Q-S9-7 RULED (a), Q-S9-8 to Q-S9-13 default (a) taken; s4 DONE 2026-10-26, O203 to O206, Q-S9-14 and Q-S9-15 default (a) taken; the row with the real verifier BLOCKED, O178) |
 | S10 | Mutants and close | PLANNED |
 
 ## 10. Open items
@@ -2208,6 +2222,30 @@ call (S9).
   new rows), the repo diff sha is the same after the gate. The lines
   that differ from the S9 s2 gate (< s2, > s3): < evm steps: 90 checked;
   > evm steps: 98 checked.
+- O203 (S9 s4, the base): the Step 0 of s4 found HEAD dcf6fc8 (the USER
+  S9 s3 commit on 97c8a8a) with the tree e6934e69 of the s3 stage, and
+  an empty `git status --short`. dcf6fc8 is the s4 base.
+- O204 (S9 s4, the docs, O177, Q-S9-14 (a), Q-S9-15 (a)):
+  mandate-lang-work/s4/docs.pl (counted `repn` edits, a backup in
+  s4/bak/) adds the section "The zkpolicy condition (S9)" at the end of
+  docs/VALIDATION.md: the mock rule (O183, O184, O186), one table of 15
+  rows (4 rows of O173, 6 rows of O174 and 5 rows of O176), the place of
+  the runs, and the BLOCKED row of O178. After the final gate,
+  mandate-lang-work/S9-s4-plan.pl writes the section 1 bullets of S9 s2,
+  S9 s3 and S9 s4, the S9 row of section 9, O203 to O206, Q-S9-14 and
+  Q-S9-15, because these lines give the gate result.
+- O205 (S9 s4, the final S9 gate): mandate-lang-work/S9-s4.sh (log
+  S9-s4-gate.log, S9-s4.txt): EXIT 0 in 893 s, FINAL SAME AS S9 S3
+  FINAL: each result line is the same as in the s3 gate (s4 changes only
+  docs). The repo diff sha is the same after the gate.
+- O206 (S9 s4, the S9 close): S9 is DONE (O171 to O206): the kit op
+  `policyVerify` and the mock verifier (s1), `PolicyProof`, `PolicyOk`
+  and `prove` (s2), the proof tail and the NO_POLICY rows (s3), and the
+  docs (s4). The row with the real verifier stays BLOCKED (O178): it
+  waits for zkpolicy-lang P10 and the mandate instance of 4.9. The bound
+  of O200 stays for each change to examples/mandate.lang. The next step
+  is S10 (section 9: the mutants of the S8 and S9 rows, O177),
+  mandate-lang-work/S10-kickoff-PROMPT.md.
 
 ## 11. Questions for the USER (S1)
 
@@ -2577,3 +2615,14 @@ AskUserQuestion: all (a).
   rows of docs/host/CAPABILITY.md and docs/host/README.md get the s3
   values, with one line of the S7 values; (b) the docs stay at S7, only
   the PLAN O rows get the s3 values. Default (a) taken (O201).
+- Q-S9-14 (O204, s4 turn 1, 2026-10-26): the form of the S9 section of
+  docs/VALIDATION.md. (a) one section at the end, after "The x402 route
+  (S8)": the mock rule as a list, one table (Slice, Row, Form, Result)
+  in the model of the S8 attack table, the place of the runs, then the
+  BLOCKED row; (b) one section for each session. Default (a) taken
+  (O204).
+- Q-S9-15 (O204, s4 turn 1): the time of the PLAN close lines. (a) the
+  PLAN script writes the section 1 bullets, the S9 row of section 9 and
+  the O rows after the final gate, because they give the gate result;
+  docs.pl changes only docs/VALIDATION.md; (b) docs.pl writes them
+  before the gate. Default (a) taken (O204).
