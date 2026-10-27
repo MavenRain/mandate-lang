@@ -225,6 +225,12 @@ questions):
   test/precompile.sh, and test/check/policy-closed-call.lang). The s2
   gate gives EXIT 0 (O226). The USER commits. The next step is S10 s3
   (mandate-lang-work/S10-s3-PROMPT.md).
+- 2026-10-27 (S10 s3, claude7): the USER commit d368d5f (S10 s2, with
+  the USER edit of O223) is in HEAD (O228). docs/VALIDATION.md has the
+  section "The mutants (S10)" (O229). The final gate gives EXIT 0 with
+  the same results as the s2 gate (O230). The S10 row is DONE, and the
+  plan is CLOSED (O231). The row with the real verifier stays BLOCKED
+  (O178). The USER commits. There is no next step.
 
 ## 2. The reading of R1
 
@@ -644,7 +650,7 @@ call (S9).
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | DONE 2026-10-26, STAGED (the close O206: the final gate EXIT 0, O205; base dcf6fc8; kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; s1 DONE 2026-10-26, COMMITTED f972a4f, O180 to O188; s2 DONE 2026-10-26, COMMITTED 97c8a8a, O189 to O194, Q-S9-5 and Q-S9-6 RULED (a); s3 DONE 2026-10-26, COMMITTED dcf6fc8, O195 to O202, Q-S9-7 RULED (a), Q-S9-8 to Q-S9-13 default (a) taken; s4 DONE 2026-10-26, O203 to O206, Q-S9-14 and Q-S9-15 default (a) taken; the row with the real verifier BLOCKED, O178) |
-| S10 | Mutants and close | IN PROGRESS (kickoff 2026-10-27: O207 to O213, the fresh gate EXIT 0, O208; base 0703e66; Q-S10-1 to Q-S10-4 RULED (a); the sessions s1 to s3, O212; the row with the real verifier BLOCKED, O178; s1 2026-10-27: O214 to O220, the 7 S8 mutants KILLED, 2 of them by new rows, the s1 gate EXIT 0, O219; s2 2026-10-27: O221 to O227, the 16 S9 mutants KILLED, 2 of them by new rows, the s2 gate EXIT 0, O226) |
+| S10 | Mutants and close | DONE (kickoff 2026-10-27: O207 to O213, the fresh gate EXIT 0, O208; base 0703e66; Q-S10-1 to Q-S10-4 RULED (a); the sessions s1 to s3, O212; the row with the real verifier BLOCKED, O178; s1 2026-10-27: O214 to O220, the 7 S8 mutants KILLED, 2 of them by new rows, the s1 gate EXIT 0, O219; s2 2026-10-27: O221 to O227, the 16 S9 mutants KILLED, 2 of them by new rows, the s2 gate EXIT 0, O226; s3 2026-10-27: O228 to O232, the section "The mutants (S10)" of docs/VALIDATION.md, O229, the final gate EXIT 0, O230; the plan CLOSED, O231; the row with the real verifier stays BLOCKED, O178) |
 
 ## 10. Open items
 
@@ -2511,6 +2517,42 @@ call (S9).
   results. s2 changes docs/PLAN.md, test/precompile.sh,
   test/check/kit.txt and test/check/expect.txt, and adds
   test/check/policy-closed-call.lang.
+- O228 (S10 s3, the base): the Step 0 of s3 found HEAD d368d5f (the USER
+  S10 s2 commit on 4932ed1) with the tree a1aec88a, not the tree
+  2449309f of the s2 stage, and an empty `git status --short`. The USER
+  edited O223 before the commit: the first s2 run used the baseline of
+  each killing script again after its first use, and that did not meet
+  O209; during the review, all 16 mutants ran again on fresh baselines,
+  and all were KILLED. S10-s1-mut.sh runs test/run.sh on the unmodified
+  tree before each edit, thus s1 met O209. No kill in S10-s1-mut.txt or
+  S10-s2-mut.txt came from the `make check` fallback. The USER ruled
+  (2026-10-27): s3 goes on under the edited O223. d368d5f is the s3
+  base.
+- O229 (S10 s3, the docs, O212): docs/VALIDATION.md has the new section
+  "The mutants (S10)": the method of O209 and the runs of s1 and s2
+  (O216, O223), one table row for each of the 23 mutants (the slice, the
+  id, the site and the killing row), the 4 new rows and why each row is
+  necessary (O217, O218, O224, O225), the three gates and the row that
+  stays BLOCKED (O178). The facts come from O209 to O227. The section
+  was in the tree during the final gate, with a mark for the gate
+  result; the PLAN script of O232 writes the result after the gate.
+- O230 (S10 s3, the final gate): mandate-lang-work/S10-s3.sh (from
+  S10-s2.sh by S10-s3-gateprep.sh; log S10-s3-gate.log, S10-s3.txt) runs
+  test/precompile.sh (precompile gate: 0 failures), then the gate, and
+  compares the gate with the S10 s2 gate S10-s2-gate.log: EXIT 0 in 505
+  s, FINAL SAME AS S10 S2 FINAL, with no GATE DIFF line. s3 adds no row.
+  The repo diff sha is the same after the gate.
+- O231 (S10 s3, the close, Q-S10-4 (a)): the S10 row is DONE, and the
+  plan is CLOSED. The 23 mutants of O210 and O211 are KILLED, 4 of them
+  by new rows (G2b, G3a, L2 and H3). The row with the real verifier
+  stays BLOCKED (O178): it waits for zkpolicy-lang P10 (its EVM
+  verifier) and the mandate instance of 4.9. A later slice can open the
+  plan again for it (O212).
+- O232 (S10 s3, the PLAN lines): mandate-lang-work/S10-s3-plan.pl writes
+  the section 1 bullet, the S10 row of section 9, O228 to O232 and the
+  gate result in docs/VALIDATION.md after the final gate, because these
+  lines give the gate result. s3 changes docs/PLAN.md and
+  docs/VALIDATION.md.
 
 ## 11. Questions for the USER (S1)
 
