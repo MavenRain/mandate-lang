@@ -213,6 +213,12 @@ questions):
   the S8 rows (O210) and of the S9 rows (O211), and the sessions s1 to
   s3 (O212). Q-S10-1 to Q-S10-4 RULED (a). The USER commits. The next
   step is S10 s1 (mandate-lang-work/S10-s1-PROMPT.md).
+- 2026-10-27 (S10 s1, claude7): the USER commit 94de313 (S10 kickoff,
+  with the USER edits of O209, O211 and Q-S10-1) is in HEAD (O214). The
+  7 mutants of O210 are KILLED (O215 to O218): 5 by the S8 rows, and G2b
+  and G3a by the new rows test/run/mandate-g2b.script and
+  test/run/mandate-g3a.script. The s1 gate gives EXIT 0 (O219). The USER
+  commits. The next step is S10 s2 (mandate-lang-work/S10-s2-PROMPT.md).
 
 ## 2. The reading of R1
 
@@ -632,7 +638,7 @@ call (S9).
 | S7 | `Machine`; the contract of section 7; the decoder; the differential; gas and size rows | DONE 2026-10-26, COMMITTED 11f166e (the close O144: the final gate EXIT 0; the mutants 25 of 25 KILLED in s2, O140): base 17d50a4; the sessions s1 to s4 (O110); Q-S7-1 to Q-S7-4 RULED (a); s1 DONE (O119 to O128); s2 part 1 (O129 to O131); s2 resume 1 (O132 to O133); s2 resume 2 (O134); s2 resume 2b (O135 to O136); s2 resume 2c (O137); s2 resume 2d (O138); s2 resume 2e and 2f (O139); s2 resume 3 to 5 (O140), s2 DONE; Q-S7-9 and Q-S7-10 RULED (a); s3 part 1 (O141) DONE; s3 resume 1 (O142) DONE; s3 resume 2 (O143), s3 DONE; s4 the close (O144), S7 DONE |
 | S8 | The attack corpus: the three attacks of the paper (G1 in the paper form, Q-S1-5; one row for each of the five forms of G2, Q-S1-6; G3 below and above `autoLimit`, Q-S1-7), the honest spend, the residual of 4.5; the x402 route | DONE 2026-10-26, STAGED (the close O170: the final gate EXIT 0, O169; base fb2e68e; s1 DONE 2026-10-26, COMMITTED 5bde71b, O152 to O158, Q-S8-5 RULED (a); s2 DONE 2026-10-26, COMMITTED fb2e68e, O159 to O165; s3 DONE 2026-10-26, O166 to O170; kickoff 2026-10-26: the sessions s1 to s3, O146; Q-S8-1 to Q-S8-4 RULED (a)) |
 | S9 | zkpolicy condition (4.9): `PolicyOk`, `PolicyProof`, the `prove` operation, the STATICCALL kit op (O12), the mock verifier, the `NO_POLICY` refusal rows, the differential rows with the mock; the row with the real verifier is BLOCKED on zkpolicy-lang P10 and the mandate instance of 4.9 (field encoding, cart binding, approving decision) | DONE 2026-10-26, STAGED (the close O206: the final gate EXIT 0, O205; base dcf6fc8; kickoff 2026-10-26: O171 to O179, Q-S9-1 to Q-S9-4 RULED (a); the sessions s1 to s4, O179; s1 DONE 2026-10-26, COMMITTED f972a4f, O180 to O188; s2 DONE 2026-10-26, COMMITTED 97c8a8a, O189 to O194, Q-S9-5 and Q-S9-6 RULED (a); s3 DONE 2026-10-26, COMMITTED dcf6fc8, O195 to O202, Q-S9-7 RULED (a), Q-S9-8 to Q-S9-13 default (a) taken; s4 DONE 2026-10-26, O203 to O206, Q-S9-14 and Q-S9-15 default (a) taken; the row with the real verifier BLOCKED, O178) |
-| S10 | Mutants and close | IN PROGRESS (kickoff 2026-10-27: O207 to O213, the fresh gate EXIT 0, O208; base 0703e66; Q-S10-1 to Q-S10-4 RULED (a); the sessions s1 to s3, O212; the row with the real verifier BLOCKED, O178) |
+| S10 | Mutants and close | IN PROGRESS (kickoff 2026-10-27: O207 to O213, the fresh gate EXIT 0, O208; base 0703e66; Q-S10-1 to Q-S10-4 RULED (a); the sessions s1 to s3, O212; the row with the real verifier BLOCKED, O178; s1 2026-10-27: O214 to O220, the 7 S8 mutants KILLED, 2 of them by new rows, the s1 gate EXIT 0, O219) |
 
 ## 10. Open items
 
@@ -2352,6 +2358,72 @@ call (S9).
   writes the section 1 bullet, the S10 row of section 9, O207 to O213
   and Q-S10-1 to Q-S10-4 after the fresh gate, because these lines give
   the gate result. The kickoff changes only docs/PLAN.md.
+- O214 (S10 s1, the base): the Step 0 of s1 found HEAD 94de313 (the USER
+  S10 kickoff commit on 0703e66) with the tree 52ee3148, not the tree
+  9ac03e95 of the kickoff stage. The USER edited docs/PLAN.md before the
+  commit (O209, O211 for L2, E1 and H3, and Q-S10-1). The USER ruled (a)
+  (2026-10-27): s1 goes on under the edited O209. 94de313 is the s1
+  base.
+- O215 (S10 s1, the sites of O210): the guard chain is in the def
+  `check` (lines 318 to 330 of examples/mandate.lang) and again in the
+  def `execute` (lines 401 to 413), with the same text. Thus a guard
+  mutant edits the two copies, and the count 2 is one site (O209 gives
+  the count 1). The guard form `(flagIf (flagIf X flagNo flagYes) CODE
+  rest)` refuses with CODE when X is false; a guard mutant changes
+  `flagNo flagYes` to `flagNo flagNo`. G1a: the cred check
+  (WRONG_SESSION, 5u); the session id is in the cred digest, and there
+  is no separate session compare. G2a: the price word goes out of the
+  leaf hash `hash4` (8 copies, 4 in each def). G2b: the compare of the
+  merchant word of the header with the session merchant (WRONG_MERCHANT,
+  3u). G3a: `u256Le total (mAutoLimit s)` changes to `u256Le total
+  (u256Sub (mAutoLimit s) 1u)` (at or below to below). G3b: the confirm
+  sig check (NEED_CONFIRM, 8u). R1: the spent check (REPLAY, 9u). X1:
+  the payee of the pay in `execute` (count 1) changes from `(mMerchant
+  s)` to `(mVault s)`. The Out form `pay` has no payer word (the payer
+  is the contract), thus X1 changes the payee only.
+- O216 (S10 s1, the mutant run): mandate-lang-work/S10-s1-mut.sh
+  (results in S10-s1-mut.txt) runs the method of O209 in a scratch tree
+  under $TMPDIR. For each mutant: the unmodified build (`make -B -j 2
+  build/langc build/asmtool build/slottool`) and test/run.sh first (both
+  exit 0), then the `sd -F` edit with the count checked, the same build
+  and test/run.sh. The S8 rows kill 5 mutants on HEAD: G1a (mandate-g1
+  row 2, 5u to 0u), G2a (mandate-g2 row 3, 3u to 2u, and each other
+  mandate script), G3b (mandate-g3 row 3, 8u to 0u), R1 (mandate-honest
+  row 4, 9u to 0u; mandate-x402 row 5, the execute revert to ok) and X1
+  (the pay line of mandate-x402 and of mandate-honest). After each
+  mutant, the original file went back, and `cmp` checked it.
+- O217 (S10 s1, G2b): on HEAD, G2b SURVIVED (test/run.sh exit 0, then
+  `make -k -B -j 2 check` exit 0). The cause: WRONG_MERCHANT (3u) has
+  two sources. The line check adds 2^64 to err when a leaf merchant is
+  not the merchant word of the header, and the G2b site compares the
+  merchant word with the session merchant. Form 2 of mandate-g2.script
+  has the merchant word 0xaa and a leaf of 0xbb, thus err gives 3u, and
+  the G2b site does not decide. The new row test/run/mandate-g2b.script
+  (Q-S10-2 (a)): Form 2 with the merchant word 0xbb (187u). The line
+  check passes, and the G2b site gives 3u; with the mutant, the result
+  is 5u (WRONG_SESSION). The rerun on a copy of the working tree: KILLED
+  by mandate-g2b.
+- O218 (S10 s1, G3a): on HEAD, G3a SURVIVED (test/run.sh exit 0, then
+  `make -k -B -j 2 check` exit 0), because no row has the total at the
+  autoLimit. The new row test/run/mandate-g3a.script (Q-S10-2 (a)): the
+  grant of mandate-g3.script with the autoLimit 90u, then s8hSpendA (the
+  total 90u) with a confirm sig that is not valid: codeOk (0u). The
+  autoLimit is in no sig digest (the row gives 0u). With the mutant, the
+  result is NEED_CONFIRM (8u). The rerun on a copy of the working tree:
+  KILLED by mandate-g3a. Thus the 7 mutants of O210 are KILLED, 2 of
+  them by new rows.
+- O219 (S10 s1, the s1 gate): part 2 of test/diff.sh runs the two new
+  rows on langc run and on the EVM (mandate-g3a after mandate-g3,
+  mandate-g2b after mandate-g2). mandate-lang-work/S10-s1.sh (log
+  S10-s1-gate.log, S10-s1.txt): EXIT 0 in 502 s, FINAL DIFFERS with 4
+  GATE DIFF lines: `diff gate: 21 rows` changes to `23 rows`, and `runs:
+  16 checked` changes to `18 checked`, with 0 failures. Each change is
+  one of the two new rows. The repo diff sha is the same after the gate.
+- O220 (S10 s1, the PLAN lines): mandate-lang-work/S10-s1-plan.pl writes
+  the section 1 bullet, the S10 row of section 9 and O214 to O220 after
+  the s1 gate, because these lines give the gate result. s1 changes
+  docs/PLAN.md and test/diff.sh, and adds the 4 files of the two new
+  rows.
 
 ## 11. Questions for the USER (S1)
 

@@ -218,7 +218,9 @@ script examples/mandate.lang test/mandate-evm.script
 script examples/mandate.lang test/run/mandate-honest.script
 script examples/mandate.lang test/run/mandate-g1.script
 script examples/mandate.lang test/run/mandate-g3.script
+script examples/mandate.lang test/run/mandate-g3a.script
 script examples/mandate.lang test/run/mandate-g2.script
+script examples/mandate.lang test/run/mandate-g2b.script
 # S8 s3 (Q-S8-4 (a), O150): the x402 route with the same chain id and mock.
 script examples/mandate.lang test/run/mandate-x402.script
 config=$_config
