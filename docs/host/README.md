@@ -289,11 +289,12 @@ The other refusals of `langc build` (exit 1, no output):
 
 ## The mandate contract (slice S7)
 
-`examples/mandate.lang` is the agent payment mandate. The owner gives a mandate to an agent. The agent spends for one session at one merchant, inside the cap of the mandate. The calldata words of `check` and `execute` are in xs order: the reverse of the read order of the decoder.
+`examples/mandate.lang` is the agent payment mandate. The owner gives a mandate to an agent. The agent spends for one session at one merchant, inside the cap of the mandate. The calldata words of `check` and `execute` are in xs order: the reverse of the read order of the decoder. Since S9 s3 (O175, Q-S9-7 (a)), xs ends with the proof tail: the proof word p, then the length word L. L is 0u (no proof) or 32u; another L gives BAD_CALLDATA. The decoder reads L first.
 
 - `grant` stores a new mandate and its merchant. It sets `spent` to 0 and `revoked` to flagNo. `revoke` sets `revoked` to flagYes. Only `self` can call `grant` and `revoke`. A call from a different address reverts.
 - `check` is a view. It gives the code of the first check that fails, else 0. The codes (O115): 0 ok, 1 NO_VIEW, 2 NO_PATH, 3 WRONG_MERCHANT, 4 NOT_CANONICAL, 5 WRONG_SESSION, 6 OVER_CAP, 7 EXPIRED, 8 NEED_CONFIRM, 9 REPLAY, 10 NO_POLICY, 11 BAD_CALLDATA, 12 NO_MANDATE. The order of the checks: NO_MANDATE, BAD_CALLDATA, NO_VIEW, NO_PATH, WRONG_MERCHANT, NOT_CANONICAL, WRONG_SESSION, OVER_CAP, EXPIRED, NEED_CONFIRM, REPLAY, NO_POLICY.
 - `execute` does the checks of `check`. When the code is 0, it adds the total to `spent`, marks the session in `used`, pays the total to the merchant with the token of the mandate and writes the event `Spent`. Else it reverts.
+- NO_POLICY (S9 s3, O175): when `mPolicyVerifier` is not 0, `check` and `execute` give NO_POLICY when L is 0u, or when `policyVerify` at that address gives flagNo for the five words (`mPolicyId`, the domain, `mId`, the session, the cart hash) and p. When `mPolicyVerifier` is 0, there is no call.
 
 Storage layout (the rule of `## EVM output (slice K4)`: field i of the state is at slot i):
 
@@ -302,7 +303,7 @@ Storage layout (the rule of `## EVM output (slice K4)`: field i of the state is 
 
 The Prod fold:
 
-- The decoder of `check` and `execute` is one `fold` over the calldata list (`List U256`) with a `Prod` accumulator of 30 words: pos bad sid mw root vv vr vs cv cr cs k fv fr fs lp lm lk lpr lmq lq ld lh ldir ch tot ck cn err ovf.
+- The decoder of `check` and `execute` is one `fold` over the calldata list (`List U256`) with a `Prod` accumulator of 32 words: pos bad sid mw root vv vr vs cv cr cs k fv fr fs lp lm lk lpr lmq lq ld lh ldir ch tot ck cn err ovf pl pp (pl and pp hold the proof tail, S9 s3).
 - The lowering keeps each word of the accumulator in its own local. When the seed or the step can trap, the step applied to a trapped accumulator must trap. `step_must_trap` in `src/lower.c` accepts a trap, a `pair` with a part that must trap, and a `flagIf` with two branches that must trap. Else the build gives REFUSE_LOWER (a fold that can discard a trapped accumulator, `test/lower/fold-discard.lang`).
 - The evaluator gives the same trap: a `pair` with a trapped part is a trap (`fold_acc` in `src/front/eval.c`).
 
@@ -313,14 +314,14 @@ The step weights (O137):
 
 The EVM rows:
 
-- `test/evm.sh` runs `test/mandate-evm.script` on the EVM (`chain`). It is rows 1 to 30 of `test/run/mandate.script` with the token 0x..ee in each grant: on the EVM, the token 0x..05 is the modexp precompile. `test/evm.sh` puts the mock token of `test/diff.sh` at 0x..ee. The chain id is 1337, as in `langc run`.
+- `test/evm.sh` runs `test/mandate-evm.script` on the EVM (`chain`). It is rows 1 to 38 of `test/run/mandate.script` with the token 0x..ee in each grant: on the EVM, the token 0x..05 is the modexp precompile. `test/evm.sh` puts the mock token of `test/diff.sh` at 0x..ee. Since S9 s3, `test/evm.sh` and `test/diff.sh` also put the mock verifier (`build/asmtool verifier`) at 0x..ef. The chain id is 1337, as in `langc run`.
 - For each step, `chain` checks the result, the storage of the receiver and the logs. Each pay line adds the Transfer LOG3 of the mock. The rows take about 3 minutes.
-- Rows 31 and 32 of `test/run/mandate.script` (the PQ row, O140) are not on the EVM.
+- Rows 39 and 40 of `test/run/mandate.script` (the PQ row, O140) are not on the EVM.
 
-Gas and size (O142 and O143; the full table is in `## Gas of each chain step (C-K4-19)` of `CAPABILITY.md`):
+Gas and size (S9 s3, O142 and O143; the full table is in `## Gas of each chain step (C-K4-19)` of `CAPABILITY.md`):
 
-- The runtime is 22457 bytes (the EIP-170 limit is 24576: 2119 bytes free). The creation code is 22482 bytes (the EIP-3860 limit is 49152).
-- `test/run/mandate-gas.script` has 6 spends: Merkle depth 1, 2, 4 and 8 with 1 line, and 2 and 4 lines at depth 2. Each spend needs the confirm signature. The gas without the intrinsic gas: the grant 233442; at depth 8 with 1 line, `check` 233533 and `execute` 474914. Each extra Merkle level adds about 11500 to `check` and 23000 to `execute`. Each extra line adds about 58700 and 117400. The gate does not check the gas.
+- The runtime is 23363 bytes (the EIP-170 limit is 24576: 1213 bytes free; S7: 22457). The creation code is 23388 bytes (the EIP-3860 limit is 49152). The assembler has 2048 labels (`ASM_LABELS` in `src/asm.h`, 1024 before S9 s3); this build uses 1047.
+- `test/run/mandate-gas.script` has 6 spends: Merkle depth 1, 2, 4 and 8 with 1 line, and 2 and 4 lines at depth 2. Each spend needs the confirm signature, and the grant has no policy verifier. The gas without the intrinsic gas: the grant 233442; at depth 8 with 1 line, `check` 249092 and `execute` 505940 (S7: 233533 and 474914). Each extra Merkle level adds about 11800 to `check` and 23600 to `execute`. Each extra line adds about 60000 and 120000. The gate does not check the gas.
 
 ## Commands
 

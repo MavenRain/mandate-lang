@@ -23,6 +23,8 @@
 # examples/mandate.lang.
 # S8 s3 (Q-S8-4 (a), O150): part 2 also runs test/run/mandate-x402.script on
 # examples/mandate.lang (the x402 route: check, then execute).
+# S9 s3 (O176): part 2 also puts the mock verifier (build/asmtool verifier) at
+# 0x..ef. A grant with the policy verifier 0x..ef thus calls it on evm, as on langc run.
 set -u
 fail=0
 rows=0
@@ -32,10 +34,13 @@ mkdir -p "$tmp"
 
 prog=examples/contract.lang
 token=00000000000000000000000000000000000000ee
+ver=00000000000000000000000000000000000000ef
 user=00000000000000000000000000000000000000bb
 neg=$(printf '%62s' '' | tr ' ' f)e2
 topic=$(keccak "$(printf '%s' 'Transfer(address,address,uint256)' | od -An -tx1 | tr -d ' \n')")
 build/asmtool mock >"$tmp/mock" || { echo "FAIL diff: asmtool mock"; exit 1; }
+build/asmtool verifier >"$tmp/ver" || { echo "FAIL diff: asmtool verifier"; exit 1; }
+valloc=",\"0x$ver\":{\"balance\":\"0x0\",\"code\":\"0x$(cat "$tmp/ver")\",\"storage\":{}}"
 
 # lg FROM TO AMOUNT: the logs line of one Transfer LOG3 of the mock.
 lg() { echo "$topic,$(pad "$1"),$(pad "$2") $(pad "$3")"; }
@@ -166,7 +171,7 @@ script() {
     _now=$1 _caller=$2 _name=$3
     shift 3
     alloc=",\"0x$token\":{\"balance\":\"0x0\",\"code\":\"0x$(cat "$tmp/mock")\",\"storage\":{$(
-      awk '{ printf "%s\"0x%s\":\"0x%s\"", (NR > 1 ? "," : ""), $1, $2 }' "$tmp/m")}}"
+      awk '{ printf "%s\"0x%s\":\"0x%s\"", (NR > 1 ? "," : ""), $1, $2 }' "$tmp/m")}}$valloc"
     _input=$(input "$_prog" "$_name" "$@")
     if ! step "$_now" "$_caller" "$_input"; then
       echo "FAIL diff $_script:$_k $_name: evm: $(head -n 1 "$tmp/dump")"

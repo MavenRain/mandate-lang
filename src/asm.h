@@ -12,7 +12,7 @@
 enum {
   ASM_CAPACITY = 49152,    /* EIP-3860: the limit of the creation code */
   ASM_RUNTIME_MAX = 24576, /* EIP-170: the limit of the runtime code */
-  ASM_LABELS = 1024,
+  ASM_LABELS = 2048,
   ASM_FIXUPS = 4096
 };
 

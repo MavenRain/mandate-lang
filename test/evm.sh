@@ -176,11 +176,16 @@ listrevert short "$(pad 1)$(pad 40)$(pad 3)$(pad 1)$(pad 2)"
 # test/run/mandate.script with the token 0x..ee in each grant: the token 0x..05 is the
 # modexp precompile, and a precompile ignores alloc code. alloc puts the mock token of
 # test/diff.sh (build/asmtool mock, mode 0) at 0x..ee, thus execute pays the mock.
+# S9 s3 (O176): alloc also puts the mock verifier (build/asmtool verifier) at 0x..ef,
+# the policy verifier of the grant rows of O176.
 build/asmtool mock >"$tmp/mock" || { echo "FAIL evm mandate: asmtool mock"; exit 1; }
+build/asmtool verifier >"$tmp/ver" || { echo "FAIL evm mandate: asmtool verifier"; exit 1; }
 transfer=$(keccak "$(printf '%s' 'Transfer(address,address,uint256)' | od -v -An -tx1 | tr -d ' \n')")
 _config=$config
 config="{\"chainId\":1337,${config#*,}"
 alloc=",\"0x00000000000000000000000000000000000000ee\":{\"balance\":\"0x0\",\"code\":\"0x$(cat "$tmp/mock")\",\"storage\":{}}"
+ver=00000000000000000000000000000000000000ef
+alloc="$alloc,\"0x$ver\":{\"balance\":\"0x0\",\"code\":\"0x$(cat "$tmp/ver")\",\"storage\":{}}"
 chain examples/mandate.lang test/mandate-evm.script
 alloc=
 config=$_config

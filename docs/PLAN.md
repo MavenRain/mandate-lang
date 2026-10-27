@@ -2125,6 +2125,89 @@ call (S9).
   both. run_refused: `prove 1u 2u` RUN_ANSWER (exit 1), `prove 0xzz` EVAL_ARGS (exit 2). test/run.sh: 16
   runs, 18 refusals, 0 failures. The s2 gate: EXIT 0, FINAL DIFFERS
   (expected).
+- O195 (S9 s3, turn A, the decoder, O175, Q-S9-7 (a), Q-S9-8 (a), Q-S9-9
+  (a)): mandate-lang-work/s3a/code.pl (counted `repn` edits;
+  `split_expr` for the nested pair edits) changes `check` and `execute`
+  of examples/mandate.lang. The fold Prod has 32 words: pl (the length
+  word L, fold position 0, `first (second^30 ...)`) and pp (the proof
+  word p, position 1, `second^31 ...`) go after ovf (now `first
+  (second^29 ...)`). The header tests `(first a) Nu` go from 0..12 to
+  2..14; the line test and the BAD_CALLDATA bound go from 12u to 14u.
+  BAD_CALLDATA when L is not 0u and not 32u. NO_POLICY stays at the S7
+  place: the verifier is not 0 and (L is 0u or `policyVerify
+  (mPolicyVerifier s) (mPolicyId s) (domainOf env) (mId s) sid ch pp` is
+  flagNo). ` 0u 0u` goes at the end of 77 check and execute rows of the
+  8 mandate scripts. The copy region of test/precompile.sh does not
+  change (copy EQUAL); no test/check file has a copy of `check`.
+- O196 (S9 s3, turn A, the rows, O176, Q-S9-11 (a)):
+  mandate-lang-work/s3a/rows.pl. test/run/mandate.script goes from 32 to
+  40 rows, test/mandate-evm.script from 30 to 38 rows: a grant with the
+  verifier 0x..ef, then the correct mock proof (0u); NO_POLICY (10u) for
+  L 0u, a changed proof word, the proof of the cart hash plus 1 and the
+  proof of the session 12u; BAD_CALLDATA (11u) for L 31u; a grant with
+  0x..ab (no code), then the correct proof (10u). A grant with 0x..ef
+  goes before the honest execute, which has the correct proof tail: the
+  same pay line and Spent event. test/run/mandate.out is made again from
+  `langc --kit run` (first the plain run was EQUAL to the old .out).
+  test/run.sh: 16 runs, 18 refusals, 0 failures (no new run files).
+- O197 (S9 s3, turn B, the allocs, Q-S9-10 (a)):
+  mandate-lang-work/s3b/alloc.pl. test/diff.sh: `ver=` (0x..ef) after
+  `token=`; after the mock line, `build/asmtool verifier >"$tmp/ver"`
+  and `valloc`; `$valloc` at the end of the part 2 alloc. The part 1
+  alloc has no verifier: part 1 runs examples/contract.lang (deposit,
+  withdraw), with no policy call. test/evm.sh also runs
+  test/mandate-evm.script on a chain: the verifier line after the mock
+  line, and `ver=` and the alloc before `chain examples/mandate.lang`.
+  Without this alloc the evm side gives 10u at the ok rows.
+- O198 (S9 s3, the label cap, Q-S9-12 (a)): after O197, test/diff.sh
+  gave 6 failures and test/evm.sh 2, with one cause: `langc --kit build
+  examples/mandate.lang` gave EVM_SIZE. The EVM_SIZE text also covers
+  the assembler tables. A scratch langc with raised caps and an ASMSTAT
+  line in asm_finish (s3b/m1.sh, s3b/m2.sh): HEAD 1015 labels and 1077
+  jumps; s3 1047 labels and 1109 jumps. ASM_LABELS (src/asm.h, 1024)
+  trips; the byte limits and the jump cap (4096) do not. src/asm.h:
+  `ASM_LABELS = 2048`. Asm is on the heap (src/evm.c:606, calloc): +12
+  KB for each. src/evm.c:560 `uint64_t hits[ASM_LABELS]` is on the
+  stack: 8 KB to 16 KB. src/evm.c:561 uses the same cap;
+  test/asmtool.c:183 loops to ASM_LABELS. Then (s3b/b2.sh): the build
+  EXIT 0 (creation 23388), test/asm.sh 8 of 8, test/run.sh 16 runs, 18
+  refusals, 0 failures, test/diff.sh 21 rows, 0 failures, test/evm.sh 98
+  steps, 0 failures.
+- O199 (S9 s3, the gas and size, O142, O143): s3b/b3.sh runs the S7 gas
+  copy (mandate-lang-work/S7-s3-r1b-gas.pl) with the new langc on the
+  HEAD files (`git show HEAD:`) and on the s3 files. The HEAD run is
+  EQUAL to the S7 table, thus the two runs use one measure. The grant:
+  233442 (the same). check, HEAD to s3: gd1 152881 to 166592, gd2 164484
+  to 178459, gd4 187521 to 202024, gd8 233533 to 249092, gc2 223120 to
+  238415, gc4 340571 to 358506. execute, HEAD to s3: gd1 364952 to
+  392282, gd2 336774 to 364632, gd4 382848 to 411762, gd8 474914 to
+  505940, gc2 454130 to 484628, gc4 688948 to 724726. With no policy
+  call (the gas script grants the verifier 0), depth 1 with 1 line adds
+  13711 (check) and 27330 (execute); each extra level adds 264 and 528
+  more, each extra line 1320 and 2640 more (probably each fold step
+  copies the 2 more words). Depth 8: 249092 and 505940 (less than 2
+  percent of 30000000; the O15 bound 8 stays). Sizes (`langc --kit build
+  FILE`, `langc --kit build FILE --runtime`; the flag goes after the
+  file): examples/mandate.lang creation 22482 to 23388, runtime 22457 to
+  23363; examples/precompile.lang 1881 and 1861 (S9 s2 changed it from
+  1725 and 1705).
+- O200 (S9 s3, a bound for s4 onward): the runtime of
+  examples/mandate.lang has 1213 bytes to the EIP-170 limit 24576 (95.1
+  percent) and 1001 labels to the cap 2048. Before a change to
+  examples/mandate.lang, measure both with a scratch langc (O198).
+- O201 (S9 s3, the docs, Q-S9-13 (a)): mandate-lang-work/s3b/docs.pl
+  (counted `repn` edits). docs/host/CAPABILITY.md C-K4-19: the headings
+  "(slice S9 s3, ...)", the s3 gas table, the S7 values in one line, the
+  cost of the 2 words, the size table and a label row.
+  docs/host/README.md `## The mandate contract (slice S7)`: the proof
+  tail of xs, a NO_POLICY row, the Prod of 32 words (pl, pp), rows 1 to
+  38 and rows 39 and 40, the mock verifier at 0x..ef, and the gas and
+  size lines. The S7 values stay in O142 and O143.
+- O202 (S9 s3, the gate): mandate-lang-work/S9-s3.sh (log
+  S9-s3-gate.log, S9-s3.txt): EXIT 0 in 766 s, FINAL DIFFERS (expected:
+  new rows), the repo diff sha is the same after the gate. The lines
+  that differ from the S9 s2 gate (< s2, > s3): < evm steps: 90 checked;
+  > evm steps: 98 checked.
 
 ## 11. Questions for the USER (S1)
 
@@ -2466,3 +2549,31 @@ AskUserQuestion: all (a).
   first try the Flag elim to `Type 0` with `Unit` (D2); if the checker
   refuses it, use the `Sum` form and record the reason. The USER RULED
   (a); the checker accepts the elim (O190).
+- Q-S9-7 (O175, s3 turn 1, 2026-10-26): the form of the proof tail in
+  xs. (a) fixed 2 words: xs ends with the proof word p, then the length
+  word L (0u or 32u; another L gives BAD_CALLDATA); the 13 header
+  positions shift by 2; two new slots pl and pp at the end of the Prod
+  (32 words). The USER RULED (a) (O195).
+- Q-S9-8 (O175, s3 turn 1): the rows with no verifier. (a) each check
+  and execute row gets ` 0u 0u` at the end of xs. Default (a) taken
+  (O195).
+- Q-S9-9 (O175, s3 turn 1): the place of NO_POLICY in the code chain.
+  (a) the S7 place, now "the verifier is not 0 and (L is 0u or
+  policyVerify ... p is flagNo)". Default (a) taken (O195).
+- Q-S9-10 (O176, s3 turn 1): the differential. (a) test/diff.sh puts the
+  mock verifier at 0x..ef next to the token mock; the policy rows stay
+  in test/run/mandate.script and test/mandate-evm.script. Default (a)
+  taken (O197; test/evm.sh also needs the alloc).
+- Q-S9-11 (O176, s3 resume1): the place of the ok execute with the
+  verifier. grant keeps `used s`, and REPLAY is before NO_POLICY. (a)
+  the check rows go at rows 20 to 30; a grant with 0x..ef goes before
+  the honest execute, which gets the correct proof tail. Default (a)
+  taken (O196).
+- Q-S9-12 (O198, s3 resume2): the label cap. (a) src/asm.h `ASM_LABELS`
+  1024 to 2048; (b) fewer labels in examples/mandate.lang (one NO_POLICY
+  test for check and execute; this changes the O175 design). Default (a)
+  taken (O198).
+- Q-S9-13 (O201, s3 resume3): the docs rows. (a) the S7 gas and size
+  rows of docs/host/CAPABILITY.md and docs/host/README.md get the s3
+  values, with one line of the S7 values; (b) the docs stay at S7, only
+  the PLAN O rows get the s3 values. Default (a) taken (O201).
